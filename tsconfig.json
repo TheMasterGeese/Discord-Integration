@@ -2,6 +2,9 @@
     "files": ["src/DiscordIntegration.ts"],
     "compilerOptions": {
         "noImplicitAny": true,
-        "target": "es5"
+        "target": "es5",
+        "types": ["@league-of-foundry-developers/foundry-vtt-types"],
+        "moduleResolution": "node",
+        "strict": true,
     }
 }
