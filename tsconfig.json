@@ -1,0 +1,7 @@
+{
+    "files": ["src/DiscordIntegration.ts"],
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "target": "es5"
+    }
+}

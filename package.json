@@ -1,0 +1,16 @@
+{
+
+  "devDependencies": {
+
+    "@league-of-foundry-developers/foundry-vtt-types": "^9.242.0",
+
+    "gulp": "^4.0.2",
+
+    "gulp-typescript": "^6.0.0-alpha.1",
+
+    "typescript": "^4.5.5"
+
+  }
+
+}
+
