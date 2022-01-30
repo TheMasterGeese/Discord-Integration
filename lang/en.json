@@ -1,0 +1,6 @@
+{
+   "DISCORDINTEGRATION.SettingsDiscordServerUrl" : "Discord Server URL",
+   "DISCORDINTEGRATION.SettingsDiscordServerUrlHint" : "The URL of the Discord Server to send messages to.",
+
+   "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID"
+}
