@@ -1,5 +1,6 @@
 
 Hooks.once("init", function () {
+    // add settings option for URL of discord server
     game.settings.register("discord-integration", "discordServerURL", {
         name: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordServerUrl"),
         hint: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordServerUrlHint"),
@@ -8,20 +9,9 @@ Hooks.once("init", function () {
         type: String,
         default: "",
     });
-    
-    /*
-    (game as Game).settings.registerMenu("discord-integration", "discordUserIDsDialog", {
-        name: (game as Game).i18n.localize(''),
-        label: (game as Game).i18n.localize("DISCORDINTEGRATION.SettingsDiscordUserIDsDialogLabel"),
-        hint: (game as Game).i18n.localize("DISCORDINTEGRATION.SettingsDiscordUserIDsDialogHint"),
-        icon: "fas fa-cog",
-        type: DiscordUserIDSettingsDialog,
-        restricted: true
-    });
-    */
-
 });
 
+// add in the extra field for DiscordID
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: any, options: Object) {
     const foundryUser: StoredDocument<User> = game.users!.contents.filter(user => { if (user.id === config.object.data._id) return user; })[0];
 
@@ -40,6 +30,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: any, o
             `));
 });
 
+// commit any changes to userConfig
 Hooks.on("closeUserConfig", async function (config : UserConfig, element : any) {
 
     const foundryUser: StoredDocument<User> = game.users!.contents.filter(user => { if (user.id === config.object.data._id) return user; })[0];

@@ -105,3 +105,6 @@ dist
 
 # zip file
 .zip
+
+# gulp output
+out
