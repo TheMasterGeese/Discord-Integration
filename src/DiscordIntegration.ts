@@ -28,7 +28,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: any, o
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string 
     discordUserId = discordUserId ? discordUserId : ""
 
-    let input = `<input type="text" name="${foundryUser.name}" value="${discordUserId}" data-dtype="String">`
+    let input = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
 
 
     const playerColourGroup = element.find('.form-group').eq(2);
@@ -39,3 +39,13 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: any, o
                 </div>
             `));
 });
+
+Hooks.on("closeUserConfig", async function (config : UserConfig, element : any) {
+
+    const foundryUser: StoredDocument<User> = game.users!.contents.filter(user => { if (user.id === config.object.data._id) return user; })[0];
+
+    let discordID : string = element.find("input[name = 'discord-id-config']")[0].value;
+
+    foundryUser.update({'flags.discord-integration.discordID': discordID}); 
+});
+// hook into when the user config is saved
