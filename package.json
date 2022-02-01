@@ -12,6 +12,10 @@
 
     "typescript": "^4.5.5"
 
+  },
+
+  "scripts": {
+    "build" : "gulp transpile && gulp zip"
   }
 
 }
