@@ -3,7 +3,7 @@
     "compilerOptions": {
         "noImplicitAny": true,
         "target": "es5",
-        "types": ["@league-of-foundry-developers/foundry-vtt-types"],
+        "types": ["@league-of-foundry-developers/foundry-vtt-types/index-lenient"],
         "moduleResolution": "node",
         "strict": true,
     }
