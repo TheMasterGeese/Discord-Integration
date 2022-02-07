@@ -1,6 +1,6 @@
 {
-   "DISCORDINTEGRATION.SettingsDiscordServerUrl" : "Discord Server URL",
-   "DISCORDINTEGRATION.SettingsDiscordServerUrlHint" : "The URL of the Discord Server to send messages to.",
+   "DISCORDINTEGRATION.SettingsDiscordWebhook" : "Discord Webhook",
+   "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the Webhook to send messages through",
 
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID"
 }

@@ -1,9 +1,9 @@
 
 Hooks.once("init", function () {
-    // add settings option for URL of discord server
-    game.settings.register("discord-integration", "discordServerURL", {
-        name: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordServerUrl"),
-        hint: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordServerUrlHint"),
+    // add settings option for URL of Discord Webhook
+    game.settings.register("discord-integration", "discordWebhook", {
+        name: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhook"),
+        hint: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhookHint"),
         scope: "world",
         config: true,
         type: String,
@@ -19,7 +19,6 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: any, o
     discordUserId = discordUserId ? discordUserId : ""
 
     let input = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
-
 
     const playerColourGroup = element.find('.form-group').eq(2);
     playerColourGroup.after($(`
@@ -47,18 +46,18 @@ Hooks.on("closeUserConfig", async function (config : UserConfig, element : any) 
  * and send a message pinging them. If you @ multiple people, it will ping all of them. Will not
  * send a message unless the username matches up with an actual user.
  * 
- * -include "@Discord", which will unconditionally forward the message (minus the @Discord) to the Discord Server.
+ * -include "@Discord", which will unconditionally forward the message (minus the @Discord) to the Discord Webhook.
  * 
  */
 // whenever someone sends a chat message, if it is marked up properly forward it to Discord.
 
-Hooks.on("chatMessage", function (chatLog : ChatLog, message : string, options : Object) {
+Hooks.on("chatMessage", async function (chatLog : ChatLog, message : string, options : Object) {
 
     // search for any @<username> strings in the message
     const userNames : string[]  = game.users!.contents.map( (user) => { return user.name! }); // get a list of usernames
     let usersToPing : string[] = [];
     userNames.forEach((userName : string) => {
-        if (message.search(`@${userName}`)) {
+        if (message.indexOf(`\@${userName}`) !== -1) {
             usersToPing.push(userName);
         }
     })
@@ -66,32 +65,32 @@ Hooks.on("chatMessage", function (chatLog : ChatLog, message : string, options :
     // search for @Discord in the message
     let shouldPingDiscord : boolean = (message.search(`@Discord`) !== -1);
 
-    if (userNames.length !== 0) {
+    if (usersToPing.length !== 0) {
 
-        userNames.forEach((userName : string) => {
-            const currentUser : User | undefined = game.users?.contents.filter((user : User)=> { user.name === userName })[0];
+        usersToPing.forEach((userName : string) => {
+            const currentUser : User | undefined = game.users?.contents.filter((user : User)=> { if (user.data.name === userName) return user; })[0];
             if (currentUser) {
                 let currentUserDiscordID : string = currentUser.getFlag('discord-integration', 'discordID') as string;
-                message.replace(`@${userName}`, `@${currentUserDiscordID}`)
+                message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`)
             }
         })
-        sendDiscordMessage(message);
+        await sendDiscordMessage(message);
     } else if (shouldPingDiscord) {
         // Remove @Discord from the message before sending it.
         const discordMessage : string | undefined = message.split("@Discord").pop();
-        sendDiscordMessage(discordMessage ? discordMessage : "");
+        await sendDiscordMessage(discordMessage ? discordMessage : "");
     }
 
 });
 
 // Send a discord message to the configured URL.
-async function sendDiscordMessage(message : string) {
+export async function sendDiscordMessage(message : string) {
     let messageJSON = {
         "content": message
     }
     $.ajax({
         method: 'POST',
-        url: game.settings.get('discord-integration', 'discordServerURL') as string,
+        url: game.settings.get('discord-integration', 'discordWebhook') as string,
         contentType: "application/json",
         data: JSON.stringify(messageJSON)
     });
