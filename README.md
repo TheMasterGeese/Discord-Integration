@@ -18,6 +18,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-### Discord: Khankar#2236
+<b>Discord</b>: Khankar#2236
 
-### Email: themastergeese@gmail.com
+<b>Email</b>: themastergeese@gmail.com
