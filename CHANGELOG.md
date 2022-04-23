@@ -1,13 +1,6 @@
-# My Module
+# Discord Integration
 
-## Release 1.0.1 (yyyy-dd-mm)
-- A simple list
-- Of changes
-
-## Release 1.0.0 (yyyy-dd-mm)
-- A simple list
-- Of changes
-
-## Pre-Release 0.1.0 (yyyy-dd-mm)
-- A simple list
-- Of changes
+##  2.0.0
+- Added sendDiscordMessage hook
+##  1.0.0
+- Discord Integraiton
