@@ -1,30 +1,22 @@
 {
-
-  "devDependencies": {
-
-    "@league-of-foundry-developers/foundry-vtt-types": "^9.242.0",
-
-    "gulp": "^4.0.2",
-
-    "gulp-typescript": "^6.0.0-alpha.1",
-
-    "gulp-webpack": "^1.5.0",
-
-    "gulp-zip": "^5.1.0",
-
-    "typescript": "^4.5.5",
-
-    "webpack": "^5.68.0",
-
-    "webpack-cli": "^4.9.2"
-
-  },
-
-  "scripts": {
-
-    "build": "gulp transpile && gulp webpack && gulp zip"
-
-  }
-
+	"name": "discord-integration",
+	"author": "Khankar#2236",
+	"title": "MG Living World - Discord Integration Library",
+	"version": "2.0.0",
+	"description": "Allows players to send messages to linked Discord Accounts, and provides API for other modules to also send Discord messages.",
+	"main": "src/DiscordIntegration.ts",
+	"scripts": {
+		"build": "npx gulp",
+		"watch": "npx gulp watch",
+		"clean": "npx gulp clean",
+		"devbuild": "npx gulp dev",
+		"devwatch": "npx gulp devWatch",
+		"devclean": "npx gulp devClean",
+		"release": "npx gulp zip",
+		"tag": "git tag -d ${npm_package_name}_${npm_package_version} 2>/dev/null ; git tag ${npm_package_name}_${npm_package_version} && git push -f origin ${npm_package_name}_${npm_package_version}"
+	},
+	"devDependencies": {
+		"@league-of-foundry-developers/foundry-vtt-types": "^9.242.0",
+		"typescript": "^4.1.3"
+	}
 }
-
