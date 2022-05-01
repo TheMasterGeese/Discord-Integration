@@ -14,7 +14,7 @@
 	"url":		"https://github.com/TheMasterGeese/{{name}}",
 	"license":	"https://github.com/TheMasterGeese/{{name}}/blob/main/LICENSE",
 	"manifest":	"https://raw.githubusercontent.com/TheMasterGeese/{{name}}/main/bundle/module.json",
-	"download":	"https://github.com/TheMasterGeese/{{name}}/archive/v{{version}}.zip",
+	"download":	"https://raw.githubusercontent.com/TheMasterGeese/{{name}}/main/bundle/{{name}}.zip",
 	"readme":	"https://github.com/TheMasterGeese/{{name}}/blob/main/README.md",
 	"changelog":"https://github.com/TheMasterGeese/{{name}}/blob/main/CHANGELOG.md"
 }
