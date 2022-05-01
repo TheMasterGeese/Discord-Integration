@@ -11,10 +11,10 @@
 	"languages": [
 		{ "lang": "en", "name": "English", "path": "lang/en.json" }
 	],
-	"url":		"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/buildOverhaul/bundle",
-	"license":	"https://github.com/TheMasterGeese/discord-integration/blob/main/LICENSE",
+	"url":		"https://github.com/TheMasterGeese/discord-integration/buildOverhaul",
+	"license":	"https://github.com/TheMasterGeese/discord-integration/blob/buildOverhaul/LICENSE",
 	"manifest":	"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/buildOverhaul/bundle/module.json",
 	"download":	"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/buildOverhaul/bundle/discord-integration.zip",
-	"readme":	"https://github.com/TheMasterGeese/discord-integration/blob/main/README.md",
-	"changelog":"https://github.com/TheMasterGeese/discord-integration/blob/main/CHANGELOG.md"
+	"readme":	"https://github.com/TheMasterGeese/discord-integration/blob/buildOverhaul/README.md",
+	"changelog":"https://github.com/TheMasterGeese/discord-integration/blob/buildOverhaul/CHANGELOG.md"
 }
