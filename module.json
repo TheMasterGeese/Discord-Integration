@@ -11,7 +11,7 @@
 	"languages": [
 		{ "lang": "en", "name": "English", "path": "lang/en.json" }
 	],
-	"url":		"https://github.com/TheMasterGeese/{{name}}/buildOverhaul",
+	"url":		"https://github.com/TheMasterGeese/{{name}}",
 	"license":	"https://github.com/TheMasterGeese/{{name}}/blob/buildOverhaul/LICENSE",
 	"manifest":	"https://raw.githubusercontent.com/TheMasterGeese/{{name}}/buildOverhaul/bundle/module.json",
 	"download":	"https://raw.githubusercontent.com/TheMasterGeese/{{name}}/buildOverhaul/bundle/{{name}}.zip",
