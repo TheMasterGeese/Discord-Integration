@@ -11,7 +11,7 @@
 	"languages": [
 		{ "lang": "en", "name": "English", "path": "lang/en.json" }
 	],
-	"url":		"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/main/bundle/",
+	"url":		"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/main/bundle",
 	"license":	"https://github.com/TheMasterGeese/discord-integration/blob/main/LICENSE",
 	"manifest":	"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/main/bundle/module.json",
 	"download":	"https://raw.githubusercontent.com/TheMasterGeese/discord-integration/main/bundle/discord-integration.zip",
