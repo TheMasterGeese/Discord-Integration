@@ -5,16 +5,6 @@
 	"version": "2.1.2",
 	"description": "Allows players to send messages to linked Discord Accounts, and provides API for other modules to also send Discord messages.",
 	"main": "src/DiscordIntegration.ts",
-	"scripts": {
-		"build": "npx gulp",
-		"watch": "npx gulp watch",
-		"clean": "npx gulp clean",
-		"devbuild": "npx gulp dev",
-		"devwatch": "npx gulp devWatch",
-		"devclean": "npx gulp devClean",
-		"release": "npx gulp zip",
-		"tag": "git tag -d ${npm_package_name}_${npm_package_version} 2>/dev/null ; git tag ${npm_package_name}_${npm_package_version} && git push -f origin ${npm_package_name}_${npm_package_version}"
-	},
 	"devDependencies": {
 		"@league-of-foundry-developers/foundry-vtt-types": "^9.242.0",
 		"typescript": "^4.1.3"
