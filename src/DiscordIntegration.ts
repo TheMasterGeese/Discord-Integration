@@ -42,7 +42,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
     const playerColorGroup = element.find('.form-group').eq(2);
     playerColorGroup.after($(`
                 <div class="form-group discord">
-                    <label>${game.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel") as string}</label>
+                    <label>${game.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel")}</label>
                     ${input}
                 </div>
             `));
