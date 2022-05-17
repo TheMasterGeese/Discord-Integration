@@ -2,5 +2,6 @@
    "DISCORDINTEGRATION.SettingsDiscordWebhook" : "Discord Webhook",
    "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the Webhook to send messages through",
 
-   "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID"
+   "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
+   "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?"
 }
