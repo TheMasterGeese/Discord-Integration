@@ -78,7 +78,12 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     // @ts-ignore
     const discordID: string = element.find("input[name = 'discord-id-config']")[0].value;
     // @ts-ignore
-    const gmNotifications: string = element.find("input[name = 'gm-notification-config']")[0].checked;
+    const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
+    let gmNotifications: boolean
+    if (gmNotificationElement && gmNotificationElement[0]) {
+        gmNotifications = (element.find("input[name = 'gm-notification-config']")[0] as HTMLInputElement).checked;
+    }
+
     // update the flag
     await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
     await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
