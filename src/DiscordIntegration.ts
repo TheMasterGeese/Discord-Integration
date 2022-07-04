@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
@@ -53,6 +54,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
         // get their GM Notification status if it exists, defaulting to true.
         const sendGMNotifications: boolean = await foundryUser.getFlag('discord-integration', 'sendGMNotifications') as boolean;
 
+        /*
         const isChecked = sendGMNotifications ? "checked" : "";
         const gmNotificationCheckbox = `<input type="checkbox" name="gm-notification-config" ${isChecked}>`
 
@@ -61,8 +63,9 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
                 <label>${game.i18n.localize("DISCORDINTEGRATION.GMNotificationsLabel") as string}</label>
                 ${gmNotificationCheckbox}
             </div>`
+            */
         const discordIDSettingElement = element.find('#discord-id-setting');
-        discordIDSettingElement.after([$(gmNotificationSetting)]);
+        //discordIDSettingElement.after([$(gmNotificationSetting)]);
     }
 
 });
@@ -78,15 +81,17 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     // @ts-ignore
     const discordID: string = element.find("input[name = 'discord-id-config']")[0].value;
     // @ts-ignore
+
+    /*
     const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
     let gmNotifications: boolean
     if (gmNotificationElement && gmNotificationElement[0]) {
         gmNotifications = (element.find("input[name = 'gm-notification-config']")[0] as HTMLInputElement).checked;
     }
-
+    */
     // update the flag
     await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
-    await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
+    //await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
 });
 
 /**
