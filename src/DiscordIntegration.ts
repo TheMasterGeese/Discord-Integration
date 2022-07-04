@@ -51,10 +51,11 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
     playerColorGroup.after([$(discordIDSetting)]);
 
     if (foundryUser.isGM) {
+        /*
         // get their GM Notification status if it exists, defaulting to true.
         const sendGMNotifications: boolean = await foundryUser.getFlag('discord-integration', 'sendGMNotifications') as boolean;
 
-        /*
+        
         const isChecked = sendGMNotifications ? "checked" : "";
         const gmNotificationCheckbox = `<input type="checkbox" name="gm-notification-config" ${isChecked}>`
 
@@ -63,7 +64,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
                 <label>${game.i18n.localize("DISCORDINTEGRATION.GMNotificationsLabel") as string}</label>
                 ${gmNotificationCheckbox}
             </div>`
-            */
+        */
         const discordIDSettingElement = element.find('#discord-id-setting');
         //discordIDSettingElement.after([$(gmNotificationSetting)]);
     }
