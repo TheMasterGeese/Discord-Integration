@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 // TODO: Right now it isn't resolving types properly, thinks quite a few things are "any"
@@ -36,16 +38,37 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
     discordUserId = discordUserId ? discordUserId : ""
 
     // create the input field to configure it.
-    const input = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
+    const discordIdInput = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
 
-    // Put the input field below the "Player Color group" field.
+    const discordIDSetting = `
+        <div id="discord-id-setting" class="form-group discord">
+            <label>${game.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel") as string}</label>
+            ${discordIdInput}
+        </div>`
+
+    // Put the input fields below the "Player Color group" field.
     const playerColorGroup = element.find('.form-group').eq(2);
-    playerColorGroup.after($(`
-                <div class="form-group discord">
-                    <label>${game.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel") as string}</label>
-                    ${input}
-                </div>
-            `));
+    playerColorGroup.after([$(discordIDSetting)]);
+
+    if (foundryUser.isGM) {
+        /*
+        // get their GM Notification status if it exists, defaulting to true.
+        const sendGMNotifications: boolean = await foundryUser.getFlag('discord-integration', 'sendGMNotifications') as boolean;
+
+        
+        const isChecked = sendGMNotifications ? "checked" : "";
+        const gmNotificationCheckbox = `<input type="checkbox" name="gm-notification-config" ${isChecked}>`
+
+        const gmNotificationSetting = `
+            <div>
+                <label>${game.i18n.localize("DISCORDINTEGRATION.GMNotificationsLabel") as string}</label>
+                ${gmNotificationCheckbox}
+            </div>`
+        */
+        const discordIDSettingElement = element.find('#discord-id-setting');
+        //discordIDSettingElement.after([$(gmNotificationSetting)]);
+    }
+
 });
 
 // commit any changes to userConfig
@@ -58,9 +81,18 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     // TODO investigating
     // @ts-ignore
     const discordID: string = element.find("input[name = 'discord-id-config']")[0].value;
+    // @ts-ignore
 
+    /*
+    const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
+    let gmNotifications: boolean
+    if (gmNotificationElement && gmNotificationElement[0]) {
+        gmNotifications = (element.find("input[name = 'gm-notification-config']")[0] as HTMLInputElement).checked;
+    }
+    */
     // update the flag
     await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
+    //await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
 });
 
 /**
@@ -76,9 +108,24 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
 
 // whenever someone sends a chat message, if it is marked up properly forward it to Discord.
 Hooks.on("chatMessage", function (chatLog: ChatLog, message: string) {
-    sendDiscordMessage(message).catch((reason) => {
-        console.error(reason);
-    });
+    const discordTags: string[] = [];
+    discordTags.push("@Discord");
+    game.users.forEach(user => {
+        discordTags.push(`@${user.name}`)
+    })
+
+    let shouldSendMessage = false;
+    discordTags.forEach(tag => {
+        if (message.includes(tag)) {
+            shouldSendMessage = true;
+        }
+    })
+
+    if (shouldSendMessage) {
+        sendDiscordMessage(message).catch((reason) => {
+            console.error(reason);
+        });
+    }
 });
 
 Hooks.on("sendDiscordMessage", function (message: string) {
@@ -126,7 +173,7 @@ export async function sendDiscordMessage(message: string) {
     const messageJSON = {
         "content": message
     }
-    
+
     await $.ajax({
         method: 'POST',
         url: game.settings.get('discord-integration', 'discordWebhook') as string,
