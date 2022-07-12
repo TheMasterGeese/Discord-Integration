@@ -1,25 +1,22 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-
-// TODO: Right now it isn't resolving types properly, thinks quite a few things are "any"
+// Thrown on Hooks.on(), cause and fix unknown
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 
 let gameUsers: StoredDocument<User>[]
+let foundryGame : Game;
+function getGame() : Game {
+    return game as Game;
+}
 
 Hooks.once("ready", function () {
-    gameUsers = game.users.contents;
+    gameUsers = (game as Game).users?.contents;
 });
 
 Hooks.once("init", function () {
+    foundryGame = getGame();
     // add settings option for URL of Discord Webhook
-    console.log(game);
-    game.settings.register("discord-integration", "discordWebhook", {
-        name: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhook"),
-        hint: game.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhookHint"),
+    foundryGame.settings.register("discord-integration", "discordWebhook", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhook"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsDiscordWebhookHint"),
         scope: "world",
         config: true,
         type: String,
@@ -31,7 +28,7 @@ Hooks.once("init", function () {
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === config.object.data._id })[0];
+    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object as User).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -42,7 +39,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
 
     const discordIDSetting = `
         <div id="discord-id-setting" class="form-group discord">
-            <label>${game.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel") as string}</label>
+            <label>${foundryGame.i18n.localize("DISCORDINTEGRATION.UserDiscordIdLabel")}</label>
             ${discordIdInput}
         </div>`
 
@@ -75,13 +72,11 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
 Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that the config was open for
-    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === config.object.data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object as User).data._id })[0];
 
-    // get the value of the discord id field.
-    // TODO investigating
-    // @ts-ignore
-    const discordID: string = element.find("input[name = 'discord-id-config']")[0].value;
-    // @ts-ignore
+
+    const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
+
 
     /*
     const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
@@ -103,14 +98,13 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
  * send a message unless the username matches up with an actual user.
  * 
  * -include "@Discord", which will unconditionally forward the message (minus the @Discord) to the Discord Webhook.
- * 
  */
 
 // whenever someone sends a chat message, if it is marked up properly forward it to Discord.
-Hooks.on("chatMessage", function (chatLog: ChatLog, message: string) {
+Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
-    game.users.forEach(user => {
+    foundryGame.users.forEach(user => {
         discordTags.push(`@${user.name}`)
     })
 
@@ -141,7 +135,7 @@ Hooks.on("sendDiscordMessage", function (message: string) {
  * 
  * @param message The message to forward to Discord
  */
-export async function sendDiscordMessage(message: string) {
+async function sendDiscordMessage(message: string) {
 
     // search for any @<username> strings in the message
     const userNames: string[] = gameUsers.map((user: User) => { return user.name }); // get a list of usernames
