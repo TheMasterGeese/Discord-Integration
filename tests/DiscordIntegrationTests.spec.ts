@@ -6,10 +6,10 @@ import { test, expect, type Page } from '@playwright/test';
 // Maybe just create a docker container for all this instead and connect to it?
 test.beforeEach(async ({ page }) => {
   // log into the game
-  await page.goto('http://localhost:30000/join');
-  await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > div:nth-child(2) > select').fill('Fate');
-  await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > button').click();
-  console.log()
+  //await page.goto('http://localhost:30000/join');
+  //await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > div:nth-child(2) > select').fill('Fate');
+  //await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > button').click();
+  //console.log()
 });
 
 test.describe('discord-integration unit tests', () => {
