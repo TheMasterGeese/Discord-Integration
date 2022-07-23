@@ -2,13 +2,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 let gameUsers: StoredDocument<User>[]
-let foundryGame: Game;
-function getGame(): Game {
-    return game as Game;
+let foundryGame : Game;
+function getGame() : Game {
+    return game;
 }
 
 Hooks.once("ready", function () {
-    gameUsers = (game as Game).users?.contents;
+    gameUsers = (game.users as Users).contents;
 });
 
 Hooks.once("init", function () {
@@ -63,10 +63,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
                 ${gmNotificationCheckbox}
             </div>`
         */
-        // const discordIDSettingElement = element.find('#discord-id-setting');
-        //discordIDSettingElement.after([$(gmNotificationSetting)]);
     }
-
 });
 
 // commit any changes to userConfig
