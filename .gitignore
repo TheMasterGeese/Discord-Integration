@@ -11,8 +11,6 @@
 !package.json
 !README.MD
 !tsconfig.json
-!dist
-!dist/*
 !docker-compose.yml
 !playwright.config.ts
 !types
