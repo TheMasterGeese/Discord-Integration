@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 let gameUsers: StoredDocument<User>[]
-let foundryGame : Game;
-function getGame() : Game {
+let foundryGame: Game;
+function getGame(): Game {
     return game as Game;
 }
 
@@ -22,6 +22,7 @@ Hooks.once("init", function () {
         type: String,
         default: "",
     });
+    if(foundryGame) console.log("true")
 });
 
 // add in the extra field for DiscordID
@@ -62,7 +63,7 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
                 ${gmNotificationCheckbox}
             </div>`
         */
-        const discordIDSettingElement = element.find('#discord-id-setting');
+        // const discordIDSettingElement = element.find('#discord-id-setting');
         //discordIDSettingElement.after([$(gmNotificationSetting)]);
     }
 
