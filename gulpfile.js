@@ -3,6 +3,7 @@ const del = require('del');
 require('dotenv').config();
 const eslint = require('gulp-eslint');
 var fs = require('fs')
+const fse = require('fs-extra');
 const gulp = require('gulp');
 const gulpIf = require('gulp-if');
 const minify = require('gulp-minify');
@@ -34,75 +35,6 @@ function DEV_DIST() { return path.join(process.env.LOCAL_DEV_DIR, PACKAGE.name +
 function pdel(patterns, options) { return () => { return del(patterns, options); }; }
 function plog(message) { return (cb) => { console.log(message); cb() }; }
 
-function isFixed(file) {
-	return file.eslint != null && file.eslint.fixed;
-}
-
-/**
- * Starts FoundryVTT locally in a docker container.
- */
-function start() {
-	return () => {
-		return new Promise(resolve => {
-			exec(`docker-compose up -d`, function (err, stdout, stderr) {
-				console.log(stdout);
-				console.log(stderr);
-				cb(err);
-				resolve(true);
-			});
-		});
-	}
-}
-exports.start = start();
-
-/**
- * Runs eslint
- */
-function lint() {
-	return () => {
-		return gulp.src(MODULE_SOURCE + GLOB)
-			.pipe(eslint(".eslintrc"))
-			.pipe(eslint({ fix: true }))
-			.pipe(eslint.format())
-			.pipe(gulpIf(isFixed, gulp.dest(MODULE_SOURCE)))
-			.pipe(eslint.failAfterError());
-	}
-}
-exports.lint = lint();
-exports.step_lint = lint();
-
-/**
- * Runs Tests via playwright
- */
-function test() {
-	return async () => {
-		// spawn a process that starts up foundry
-		const foundryUp = spawn('docker-compose', ['up'], { detached: true });
-		//const foundry = spawn('node', [ 'C:/Users/Jon/FoundryVTT-9.255/resources/app/main.js', 'C:/Users/Jon/foundryData'], { detached: true } );
-		return new Promise(resolve => {
-			exec(`npx playwright test --config ${MODULE}/test`, function (err, stdout, stderr) {
-				console.log(stdout);
-				console.log(stderr);
-				cb(err);
-				resolve(true);
-			});
-		}).finally(() => {
-			foundryUp.kill()
-			spawn('docker-compose', ['down'], { detached: true });
-		});
-
-		/*
-		return exec(`npx playwright test --config ${MODULE}/test`, function (err, stdout, stderr) {	
-			console.log(stdout);
-			console.log(stderr);
-			cb(err);
-			foundry.kill();
-		});
-		*/
-	}
-}
-exports.test = test();
-exports.step_test = test();
 /**
  * Compile the source code into the distribution directory
  * @param {Boolean} keepSources Include the TypeScript SourceMaps
@@ -178,36 +110,6 @@ function compressDistribution() {
 }
 
 /**
- * Starts FoundryVTT locally in a docker container.
- */
-function start() {
-	return async function start() {
-		return new Promise(async (resolve) => {
-			let { stdout, stderr } = await exec(`docker-compose up -d`);
-			console.log(stdout);
-			console.log(stderr);
-			resolve(true);
-		});
-	}
-}
-exports.start = start();
-
-/**
- * Stops a locally running FoundryVTT container.
- */
-function kill() {
-	return async function kill() {
-		return new Promise(async (resolve) => {
-			let { stdout, stderr } = await exec(`docker-compose down`);
-			console.log(stdout);
-			console.log(stderr);
-			resolve(true);
-		});
-	}
-}
-exports.kill = kill();
-
-/**
  * Runs eslint. Fixes any automatically-fixable errors, and will fail if any errors are encountered (but not warnings)
  */
 function lint() {
@@ -229,12 +131,21 @@ exports.lint = lint();
  * Runs Tests via playwright. Builds up and tears down a fresh FoundryVTT container to run the tests on.
  */
 function test() {
-	return async function test() {
-		start();
-		({ stdout, stderr } = await exec(`npx playwright test`));
-		console.log(stdout);
-		console.log(stderr);
-		kill();
+	return async function test() {		
+			let { stdout, stderr } = await exec(`docker-compose up -d`);
+			console.log(stdout);
+			console.log(stderr);
+			await fse.copy('foundrydata/Config', process.env.LOCAL_DATA+ "/Config", { overwrite : true });
+			await fse.copy('foundrydata/Data', process.env.LOCAL_DATA+ "/Data", { overwrite : true });
+			do {
+				({ stdout, stderr } = await exec('docker inspect --format="{{json .State.Health.Status}}" discord-integration-foundry-1'));
+			} while (stdout!== '"healthy"\n');
+			({ stdout, stderr } = await exec(`npx playwright test`));
+			console.log(stdout);
+			console.log(stderr);
+			({ stdout, stderr } = await exec(`docker-compose down`));
+			console.log(stdout);
+			console.log(stderr);
 	}
 }
 exports.test = test();
@@ -264,7 +175,7 @@ exports.cleanAll = cleanAll();
  */
 exports.default = gulp.series(
 	lint()
-	, cleanAll()	
+	, cleanAll()
 	, gulp.parallel(
 		buildSource(true, false)
 		, buildManifest()

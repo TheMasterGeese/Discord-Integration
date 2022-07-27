@@ -1,20 +1,49 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
+// TODO: Should there be a folder of foundrydata that already has all this set up? We have to do all this before any of the tests anyway.
 
-// TODO: The suite needs to assume a fresh install of FoundryVTT.
-// This means a new world needs to be created, with a specific user for testing.
-// And the corresponding mod needs to be installed.
-// Maybe just create a docker container for all this instead and connect to it?
-test.beforeEach(async ({ page }) => {
-  // log into the game
-  //await page.goto('http://localhost:30000/join');
-  //await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > div:nth-child(2) > select').fill('Fate');
-  //await page.locator('#join-game > section > div.left.flexcol > div:nth-child(1) > button').click();
-  //console.log()
-});
+test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext({
+        recordVideo: { dir: './playwright-report' }
+    });
+    try {
+        const page = await context.newPage();
+        // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
 
+        page.on('console', msg => {
+            if (msg.type() === 'error')
+                console.log(`Error text: "${msg.text()}"`);
+        });
+
+        await Promise.all([
+            page.goto('http://localhost:30000'),
+            page.waitForLoadState('load')
+        ]);
+        // await page.waitForFunction(() => game?.ready, undefined, { timeout: 120000 });
+        if (page.url() === 'http://localhost:30000/auth') {
+            await page.locator('#key').fill('atropos');
+            await page.locator('input[name="adminKey"]').press('Enter');
+        }
+        if (page.url() === 'http://localhost:30000/setup') {
+            await page.locator('text=Launch World').click();
+        }
+        if (page.url() === 'http://localhost:30000/join') {
+            await page.locator('select[name="userid"]').focus();
+            await page.locator('select[name="userid"]').selectOption('iF8XB8q033MxJkU3');
+
+            await Promise.all([
+                page.locator('button:has-text("Join Game Session")').click({ force: true }),
+                page.waitForNavigation({ url: 'http://localhost:30000/game' }),
+                // TODO: Find a more graceful way to type
+                page.waitForFunction(() => (window as any).game?.ready, undefined, { timeout: 120000 })
+            ]);
+        }
+    } finally {
+        await context.close();
+    }
+})
 test.describe('discord-integration unit tests', () => {
-
     test('should register settings on init', async ({ page }) => {
+        // expect(game.settings.get('discord-integration', 'discordWebhook') as string).toMatch('');
         // case for when the setting registers
     });
     test('should add inputFields below Player Color group', async ({ page }) => {
@@ -22,12 +51,12 @@ test.describe('discord-integration unit tests', () => {
         // case for play is not GM
     });
     test('should update user flags when closing user config', async ({ page }) => {
-        
+
         // case where the user was not found
         // case where the discord-id-config element was not found
         // case where the discord-id-config input has no value
         // case where the discord-id-config input is invalid
-            // TODO: What kinds of text inputs are invalid?
+        // TODO: What kinds of text inputs are invalid?
         // case for when player is GM
         // case for player is not GM
     });
@@ -82,5 +111,4 @@ test.describe('discord-integration end-to-end tests', () => {
     test('should forward a message with valid tag for user', async ({ page }) => {
         // TODO
     });
-    
 });
