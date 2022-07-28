@@ -127,6 +127,7 @@ function lint() {
 }
 
 exports.lint = lint();
+
 /**
  * Runs Tests via playwright. Builds up and tears down a fresh FoundryVTT container to run the tests on.
  */
@@ -135,11 +136,9 @@ function test() {
 			let { stdout, stderr } = await exec(`docker-compose up -d`);
 			console.log(stdout);
 			console.log(stderr);
-			await fse.copy('foundrydata/Config', process.env.LOCAL_DATA+ "/Config", { overwrite : true });
-			await fse.copy('foundrydata/Data', process.env.LOCAL_DATA+ "/Data", { overwrite : true });
 			do {
 				({ stdout, stderr } = await exec('docker inspect --format="{{json .State.Health.Status}}" discord-integration-foundry-1'));
-			} while (stdout!== '"healthy"\n');
+			} while (stdout !== '"healthy"\n');
 			({ stdout, stderr } = await exec(`npx playwright test`));
 			console.log(stdout);
 			console.log(stderr);
@@ -175,7 +174,17 @@ exports.cleanAll = cleanAll();
  */
 exports.default = gulp.series(
 	lint()
-	, cleanAll()
+	, pdel([DEV_DIST() + GLOB], { force: true })
+	, gulp.parallel(
+		buildSource(true, false, DEV_DIST())
+		, buildManifest(DEV_DIST())
+		, outputLanguages(DEV_DIST())
+		, outputTemplates(DEV_DIST())
+		, outputStylesCSS(DEV_DIST())
+		, outputSounds(DEV_DIST())
+		, outputMetaFiles(DEV_DIST())
+	)
+	, test()
 	, gulp.parallel(
 		buildSource(true, false)
 		, buildManifest()
@@ -185,15 +194,13 @@ exports.default = gulp.series(
 		, outputSounds()
 		, outputMetaFiles()
 	)
-	, test()
 );
 
 /**
  * Extends the default build task by copying the result to the Development Environment
  */
 exports.dev = gulp.series(
-	lint()
-	, pdel([DEV_DIST() + GLOB], { force: true })
+	pdel([DEV_DIST() + GLOB], { force: true })
 	, gulp.parallel(
 		buildSource(true, false, DEV_DIST())
 		, buildManifest(DEV_DIST())

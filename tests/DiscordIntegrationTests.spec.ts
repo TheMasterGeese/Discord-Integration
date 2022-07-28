@@ -1,12 +1,18 @@
-import { test, expect, Page } from '@playwright/test';
-// TODO: Should there be a folder of foundrydata that already has all this set up? We have to do all this before any of the tests anyway.
+import { test, expect, Page, BrowserContext } from '@playwright/test';
 
-test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({
-        recordVideo: { dir: './playwright-report' }
-    });
-    try {
-        const page = await context.newPage();
+let context: BrowserContext
+let page: Page;
+
+const expectedWebhook = "testwebhook";
+
+test.describe('discord-integration unit tests', () => {
+
+    test.beforeAll(async ({ browser }) => {
+        context = await browser.newContext({
+            recordVideo: { dir: './playwright-report' }
+        });
+
+        page = await context.newPage();
         // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
 
         page.on('console', msg => {
@@ -18,7 +24,7 @@ test.beforeAll(async ({ browser }) => {
             page.goto('http://localhost:30000'),
             page.waitForLoadState('load')
         ]);
-        // await page.waitForFunction(() => game?.ready, undefined, { timeout: 120000 });
+        // In theory these first two should be unnecessary, but are added as a precaution.
         if (page.url() === 'http://localhost:30000/auth') {
             await page.locator('#key').fill('atropos');
             await page.locator('input[name="adminKey"]').press('Enter');
@@ -26,25 +32,37 @@ test.beforeAll(async ({ browser }) => {
         if (page.url() === 'http://localhost:30000/setup') {
             await page.locator('text=Launch World').click();
         }
-        if (page.url() === 'http://localhost:30000/join') {
-            await page.locator('select[name="userid"]').focus();
-            await page.locator('select[name="userid"]').selectOption('iF8XB8q033MxJkU3');
+    })
+    test.beforeEach(async ({ }) => {
+        await Promise.all([
+            page.goto('http://localhost:30000'),
+            page.waitForLoadState('load')
+        ]);
 
-            await Promise.all([
-                page.locator('button:has-text("Join Game Session")').click({ force: true }),
-                page.waitForNavigation({ url: 'http://localhost:30000/game' }),
-                // TODO: Find a more graceful way to type
-                page.waitForFunction(() => (window as any).game?.ready, undefined, { timeout: 120000 })
-            ]);
-        }
-    } finally {
-        await context.close();
-    }
-})
-test.describe('discord-integration unit tests', () => {
-    test('should register settings on init', async ({ page }) => {
-        // expect(game.settings.get('discord-integration', 'discordWebhook') as string).toMatch('');
-        // case for when the setting registers
+        await page.locator('select[name="userid"]').focus();
+        await page.locator('select[name="userid"]').selectOption('iF8XB8q033MxJkU3');
+
+        await Promise.all([
+            page.locator('button:has-text("Join Game Session")').click({ force: true }),
+            //page.waitForNavigation({ url: 'http://localhost:30000/game' }),
+            // TODO: Find a more graceful way to cast window to a type
+            page.waitForFunction(() => (window as any).game?.ready)
+        ]);
+
+    });
+
+    test('should register settings on init', async ({ }) => {
+        // Click the settings icon in the sidemenu
+        await page.locator('a:nth-child(11) > .fas').click();
+
+        // Go to the "Configure settings" menu
+        await page.locator('text=Configure Settings').click();
+
+        // Go to the "Module Settings" menu
+        await page.locator('text=Module Settings').click();
+
+        // make sure the Discord Webhook field is filled out with the expected value.
+        await expect(page.locator('input[name="discord-integration\\.discordWebhook"]')).toHaveValue(expectedWebhook);
     });
     test('should add inputFields below Player Color group', async ({ page }) => {
         // case for player is GM
@@ -111,4 +129,9 @@ test.describe('discord-integration end-to-end tests', () => {
     test('should forward a message with valid tag for user', async ({ page }) => {
         // TODO
     });
+});
+
+test.afterAll(async ({ page, context }) => {
+    page.close();
+    context.close();
 });
