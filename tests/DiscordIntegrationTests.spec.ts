@@ -52,6 +52,8 @@ test.describe('discord-integration unit tests', () => {
     });
 
     test('should register settings on init', async ({ }) => {
+
+        await logOnAsUser('')
         // Click the settings icon in the sidemenu
         await page.locator('a:nth-child(11) > .fas').click();
 
@@ -108,6 +110,22 @@ test.describe('discord-integration unit tests', () => {
         // case where the string does not stringify into JSON
         // case where the message sends correctly       
     });
+    async function logOnAsUser(userId: string) {
+        await Promise.all([
+            page.goto('http://localhost:30000'),
+            page.waitForLoadState('load')
+        ]);
+
+        await page.locator('select[name="userid"]').focus();
+        await page.locator('select[name="userid"]').selectOption(userId);
+
+        await Promise.all([
+            page.locator('button:has-text("Join Game Session")').click({ force: true }),
+            //page.waitForNavigation({ url: 'http://localhost:30000/game' }),
+            // TODO: Find a more graceful way to cast window to a type
+            page.waitForFunction(() => (window as any).game?.ready)
+        ]);
+    }
 });
 
 test.describe('discord-integration end-to-end tests', () => {
@@ -135,3 +153,4 @@ test.afterAll(async ({ page, context }) => {
     page.close();
     context.close();
 });
+
