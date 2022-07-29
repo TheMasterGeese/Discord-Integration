@@ -2,51 +2,45 @@
 
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 
-let context: BrowserContext
-
 let gm_uid: string;
 let player_uid: string;
 
 const EXPECTED_WEBHOOK = "testwebhook";
 const EXPECTED_GM_DISCORD_ID = '356634652963897345';
 
-test.beforeAll(async ({ browser }) => {
 
-    const page = await context.newPage();
-    // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
-
-    page.on('console', msg => {
-        if (msg.type() === 'error')
-            console.log(`Error text: "${msg.text()}"`);
-    });
-
-    await Promise.all([
-        page.goto('http://localhost:30000'),
-        page.waitForLoadState('load')
-    ]);
-    // In theory these first two should be unnecessary, but are added as a precaution.
-    if (page.url() === 'http://localhost:30000/auth') {
-        await page.locator('#key').fill('atropos');
-        await page.locator('input[name="adminKey"]').press('Enter');
-    }
-    if (page.url() === 'http://localhost:30000/setup') {
-        await page.locator('text=Launch World').click();
-    }
-})
 
 test.describe('discord-integration', () => {
 
-    test.beforeEach(async ({ browser }) => {
-        context = await browser.newContext({
-            recordVideo: { dir: './playwright-report' }
+    test.beforeAll(async ({ browser }) => {
+
+        // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
+        /*
+        page.on('console', msg => {
+            if (msg.type() === 'error')
+                console.log(`Error text: "${msg.text()}"`);
         });
-    });
+        
+        await Promise.all([
+            page.goto('http://localhost:30000'),
+            page.waitForLoadState('load')
+        ]);
+        // In theory these first two should be unnecessary, but are added as a precaution.
+        if (page.url() === 'http://localhost:30000/auth') {
+            await page.locator('#key').fill('atropos');
+            await page.locator('input[name="adminKey"]').press('Enter');
+        }
+        if (page.url() === 'http://localhost:30000/setup') {
+            await page.locator('text=Launch World').click();
+        }
+        */
+    })
 
     test('should register settings on init', async ({ page }) => {
 
         await logOnAsUser(1, page);
         // Click the settings icon in the sidemenu
-        await page.locator('a:nth-child(11) > .fas').click();
+        await page.locator('a:nth-child(11) > .fas.fa-cogs').click();
 
         // Go to the "Configure settings" menu
         await page.locator('text=Configure Settings').click();
@@ -120,10 +114,6 @@ test.describe('discord-integration', () => {
         // case where there is an invalid discordWebhook in the settings
         // case where the string does not stringify into JSON
         // case where the message sends correctly       
-    });
-
-    test.afterEach(async ({}) => {
-        await context.close();
     });
 
     /**

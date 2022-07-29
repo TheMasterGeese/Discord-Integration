@@ -43,9 +43,10 @@ const config: PlaywrightTestConfig = {
     trace: 'on-first-retry',
     //headless: false,
     ignoreHTTPSErrors: true,
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     viewport: { width: 1920, height: 1000 }
   },
-
   /* Configure projects for major browsers */
   projects: [
     {
