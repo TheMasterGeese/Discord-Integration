@@ -28,6 +28,24 @@ test.describe('discord-integration', () => {
         // make sure the Discord Webhook field is filled out with the expected value.
         await expect(page.locator('input[name="discord-integration\\.discordWebhook"]')).toHaveValue(EXPECTED_WEBHOOK);
     });
+    test.describe('should update discord webhook in settings', () => {
+
+        test.skip('when player is GM', async ({ page }) => {
+
+        });
+    });
+    test.describe('should NOT update discord webhook in settings', () => {
+
+        test.skip('when player is NOT GM', async ({ page }) => {
+
+        });
+        test.skip('when input field is empty', async ({ page }) => {
+
+        });
+        test.skip('when input field has invalid webhook', async ({ page }) => {
+
+        });
+    });
     test.describe('should add inputFields below Player Color group', () => {
 
         test('when player is GM', async ({ page }) => {
@@ -58,45 +76,92 @@ test.describe('discord-integration', () => {
 
     });
 
-    test('should update user flags when closing user config', async ({ page }) => {
+    test.describe('should update user flags when closing user config', () => {
 
-        // case where the user was not found
-        // case where the discord-id-config element was not found
-        // case where the discord-id-config input has no value
-        // case where the discord-id-config input is invalid
-        // TODO: What kinds of text inputs are invalid?
-        // case for when player is GM
-        // case for player is not GM
+        test.skip('when player is GM', async ({ page }) => {
+       
+        });
+        test.skip('when player is NOT GM', async ({ page }) => {
+       
+        });
+
+        // unit testing
+            // case where the user was not found
+            // case where the discord-id-config element was not found
     });
-    test('should handle new chat messages', async ({ page }) => {
-        // case where there are no users
-        // case where there is a user but no tags in the message
-        // case where there is a user with a tag in the message not for any users
-        // case where there is a user with a tag in the message for a user
-        // case where there is a user with two tags in the message: one for a user
-        // case where there is a user with two tags in the message: both for users
-        // case where there is a @Discord tag in the message
+
+    test.describe('should NOT update user flags when closing user config', () => {
+        test.skip('when discord-id-config input has no value', async ({ page }) => {
+       
+        });
+        test.skip('when discord-id-config input is not an 18-digit number', async ({ page }) => {
+       
+        });
     });
-    test('should handle sending a discord message', async ({ page }) => {
-        // case where the message sends correctly
-        // case where the message throws an error
+
+    test.describe('should handle new chat messages', () => {  
+        test.skip('when there is a  tag in the message for a user', async ({ page }) => {
+       
+        });
+        test.skip('when there is are two tags in the message: one for a user', async ({ page }) => {
+       
+        });
+        test.skip('when there is are two tags in the message: both for users', async ({ page }) => {
+       
+        });
+        test.skip('when there is a @Discord tag in the message', async ({ page }) => {
+       
+        });
+
+        // unit testing
+            // case where there are no users
     });
-    test('sendDiscordMessage()', async ({ page }) => {
-        // case where there are no users
-        // case where the current user can't be found
-        // case where there are no tags in the message
-        // case where there is a message with no tags
-        // case where there is a message with a tag for a user
-        // case where there is a message with multiple tags; one for a user
-        // case where there is a message with multiple tags; both for users
-        // case where there is a @Discord tag in the message
-        // case where the current user has no discordId
-        // case where the current user has a discordId that doesn't link to a discord user
-        // case where the current user has a discordId that doesn't link to a discord user in the server
-        // case where there is no discordWebhook in the settings
-        // case where there is an invalid discordWebhook in the settings
-        // case where the string does not stringify into JSON
-        // case where the message sends correctly       
+    
+    test.describe('should NOT handle new chat message', () => {
+        test.skip('when there are no tags in the message', async ({ page }) => {
+            
+        });
+
+        test.skip('when there is a tag in the message but not for a user', async ({ page }) => {
+       
+        });
+   
+    });
+
+    test.describe('should send message to Discord', async () => {
+        test.skip('when all ids and hooks have been setup', async ({ page }) => {
+            
+        });
+    });
+
+    test.describe('should NOT send message to Discord', async () => {
+        test.skip('when the user posting the message does not have a discordId set', async ({ page }) => {
+            
+        });
+        test.skip('when the user posting the message has a discordId that does not link to a discord user', async ({ page }) => {
+            
+        });
+        test.skip('when the user posting the message has a discordId that does not link to a discord user in the server', async ({ page }) => {
+            
+        });
+        test.skip('when there is no discord webhook set', async ({ page }) => {
+            
+        });
+        test.skip('when the discord webhook does link to a discord server', async ({ page }) => {
+            
+        });
+        test.skip('when the message does not stringify into JSON', async ({ page }) => {
+            
+        });
+    });
+    // TODO: How will we handle using a discord server for this test? Just have one up all the time?
+    test.describe('should handle discord response', async () => {
+        test.skip('when the response comes back successfully', async ({ page }) => {
+       
+        });
+        test.skip('when the response returns an error', async ({ page }) => {
+       
+        });
     });
 
     /**
@@ -123,27 +188,6 @@ test.describe('discord-integration', () => {
             page.waitForFunction(() => (window as any).game?.ready)
         ]);
     }
-});
-
-test.describe('discord-integration end-to-end tests', () => {
-    test('should edit the discordWebhook setting', async ({ page }) => {
-        // Change the setting
-    });
-    test('should edit a users discordId', async ({ page }) => {
-        // TODO
-    });
-    test('should not forward a message without tags', async ({ page }) => {
-        // TODO
-    });
-    test('should not forward a message with invalid tag', async ({ page }) => {
-        // TODO
-    });
-    test('should forward a message with @Discord Tag', async ({ page }) => {
-        // TODO
-    });
-    test('should forward a message with valid tag for user', async ({ page }) => {
-        // TODO
-    });
 });
 
 
