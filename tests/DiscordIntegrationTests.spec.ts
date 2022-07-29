@@ -7,6 +7,7 @@ let player_uid: string;
 
 const EXPECTED_WEBHOOK = "testwebhook";
 const EXPECTED_GM_DISCORD_ID = '356634652963897345';
+const EXPECTED_PLAYER_DISCORD_ID = '109464021618417664'
 
 
 
@@ -30,27 +31,33 @@ test.describe('discord-integration', () => {
     test.describe('should add inputFields below Player Color group', () => {
 
         test('when player is GM', async ({ page }) => {
-            await logOnAsUser(1, page);
-            // Click text=Gamemaster [GM]
+            await testInputField(1, gm_uid, EXPECTED_GM_DISCORD_ID, page);
+        });
+        test('when player is NOT GM', async ({ page }) => {
+            await testInputField(2, player_uid, EXPECTED_PLAYER_DISCORD_ID, page);
+        });
+
+        async function testInputField(userIndex: number, uid: string, expectedDiscordId: string, page : Page) {
+            await logOnAsUser(userIndex, page);
+            // Click on the "Gamemaster [GM]" in the players list."
 
             await page.locator(`#player-list > li:nth-child(1)`).focus();
             await Promise.all([
-                page.locator(`li[data-user-id="${gm_uid}"]`).click({
+                page.locator(`li[data-user-id="${uid}"]`).click({
                     button: 'right',
                     force: true
                 }),
-                page.waitForSelector('#context-menu')
+                page.waitForSelector('#context-menu > ol > li:has-text("User Configuration")')
             ]);
             await Promise.all([
-                page.locator('#context-menu').click(),
-                page.waitForSelector(`#user-sheet-${gm_uid}`)
+                page.locator('#context-menu > ol > li:has-text("User Configuration")').click(),
+                page.waitForSelector(`#user-sheet-${uid}`)
             ]);
-            expect(await page.locator('#discord-id-setting > input[name="discord-id-config"]').getAttribute('value')).toMatch(EXPECTED_GM_DISCORD_ID);
-        });
-        test('when player is NOT GM', async ({ page }) => {
-        });
+            expect(await page.locator('#discord-id-setting > input[name="discord-id-config"]').getAttribute('value')).toMatch(expectedDiscordId);
+        }
 
     });
+
     test('should update user flags when closing user config', async ({ page }) => {
 
         // case where the user was not found
