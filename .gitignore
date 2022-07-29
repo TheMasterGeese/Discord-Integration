@@ -15,6 +15,7 @@
 !playwright.config.ts
 !types
 !types/**/*
+!tests/**/*
 node_modules/
 /test-results/
 /playwright-report/
