@@ -17,6 +17,8 @@
 !types/**/*
 !tests
 !tests/**/*
+!testWorld
+!testWorld/**/*
 node_modules/
 /test-results/
 /playwright-report/
