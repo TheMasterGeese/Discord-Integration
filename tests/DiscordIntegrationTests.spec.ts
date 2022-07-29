@@ -1,59 +1,50 @@
+// TODO: Need to figure out a way to faciliate linking to discord server for this test.
+
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 
 let context: BrowserContext
-let page: Page;
 
-const expectedWebhook = "testwebhook";
+let gm_uid: string;
+let player_uid: string;
 
-test.describe('discord-integration unit tests', () => {
+const EXPECTED_WEBHOOK = "testwebhook";
+const EXPECTED_GM_DISCORD_ID = '356634652963897345';
 
-    test.beforeAll(async ({ browser }) => {
+test.beforeAll(async ({ browser }) => {
+
+    const page = await context.newPage();
+    // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
+
+    page.on('console', msg => {
+        if (msg.type() === 'error')
+            console.log(`Error text: "${msg.text()}"`);
+    });
+
+    await Promise.all([
+        page.goto('http://localhost:30000'),
+        page.waitForLoadState('load')
+    ]);
+    // In theory these first two should be unnecessary, but are added as a precaution.
+    if (page.url() === 'http://localhost:30000/auth') {
+        await page.locator('#key').fill('atropos');
+        await page.locator('input[name="adminKey"]').press('Enter');
+    }
+    if (page.url() === 'http://localhost:30000/setup') {
+        await page.locator('text=Launch World').click();
+    }
+})
+
+test.describe('discord-integration', () => {
+
+    test.beforeEach(async ({ browser }) => {
         context = await browser.newContext({
             recordVideo: { dir: './playwright-report' }
         });
-
-        page = await context.newPage();
-        // reset the foundryData directory back to its base form, with only a single world with PF2E system running.
-
-        page.on('console', msg => {
-            if (msg.type() === 'error')
-                console.log(`Error text: "${msg.text()}"`);
-        });
-
-        await Promise.all([
-            page.goto('http://localhost:30000'),
-            page.waitForLoadState('load')
-        ]);
-        // In theory these first two should be unnecessary, but are added as a precaution.
-        if (page.url() === 'http://localhost:30000/auth') {
-            await page.locator('#key').fill('atropos');
-            await page.locator('input[name="adminKey"]').press('Enter');
-        }
-        if (page.url() === 'http://localhost:30000/setup') {
-            await page.locator('text=Launch World').click();
-        }
-    })
-    test.beforeEach(async ({ }) => {
-        await Promise.all([
-            page.goto('http://localhost:30000'),
-            page.waitForLoadState('load')
-        ]);
-
-        await page.locator('select[name="userid"]').focus();
-        await page.locator('select[name="userid"]').selectOption('iF8XB8q033MxJkU3');
-
-        await Promise.all([
-            page.locator('button:has-text("Join Game Session")').click({ force: true }),
-            //page.waitForNavigation({ url: 'http://localhost:30000/game' }),
-            // TODO: Find a more graceful way to cast window to a type
-            page.waitForFunction(() => (window as any).game?.ready)
-        ]);
-
     });
 
-    test('should register settings on init', async ({ }) => {
+    test('should register settings on init', async ({ page }) => {
 
-        await logOnAsUser('')
+        await logOnAsUser(1, page);
         // Click the settings icon in the sidemenu
         await page.locator('a:nth-child(11) > .fas').click();
 
@@ -64,11 +55,31 @@ test.describe('discord-integration unit tests', () => {
         await page.locator('text=Module Settings').click();
 
         // make sure the Discord Webhook field is filled out with the expected value.
-        await expect(page.locator('input[name="discord-integration\\.discordWebhook"]')).toHaveValue(expectedWebhook);
+        await expect(page.locator('input[name="discord-integration\\.discordWebhook"]')).toHaveValue(EXPECTED_WEBHOOK);
     });
-    test('should add inputFields below Player Color group', async ({ page }) => {
-        // case for player is GM
-        // case for play is not GM
+    test.describe('should add inputFields below Player Color group', () => {
+
+        test('when player is GM', async ({ page }) => {
+            await logOnAsUser(1, page);
+            // Click text=Gamemaster [GM]
+
+            await page.locator(`#player-list > li:nth-child(1)`).focus();
+            await Promise.all([
+                page.locator(`li[data-user-id="${gm_uid}"]`).click({
+                    button: 'right',
+                    force: true
+                }),
+                page.waitForSelector('#context-menu')
+            ]);
+            await Promise.all([
+                page.locator('#context-menu').click(),
+                page.waitForSelector(`#user-sheet-${gm_uid}`)
+            ]);
+            expect(await page.locator('#discord-id-setting > input[name="discord-id-config"]').getAttribute('value')).toMatch(EXPECTED_GM_DISCORD_ID);
+        });
+        test('when player is NOT GM', async ({ page }) => {
+        });
+
     });
     test('should update user flags when closing user config', async ({ page }) => {
 
@@ -110,14 +121,27 @@ test.describe('discord-integration unit tests', () => {
         // case where the string does not stringify into JSON
         // case where the message sends correctly       
     });
-    async function logOnAsUser(userId: string) {
+
+    test.afterEach(async ({}) => {
+        await context.close();
+    });
+
+    /**
+     * 
+     * @param userIndex 1 for GM, 2 for Player
+     */
+    async function logOnAsUser(userIndex: number, page : Page) {
         await Promise.all([
             page.goto('http://localhost:30000'),
             page.waitForLoadState('load')
         ]);
 
         await page.locator('select[name="userid"]').focus();
-        await page.locator('select[name="userid"]').selectOption(userId);
+        await page.locator('select[name="userid"]').selectOption({ index: userIndex });
+
+        // get and then set the GM and user ids
+        gm_uid = await page.locator('select[name="userid"] > option:nth-child(2)').getAttribute('value');
+        player_uid = await page.locator('select[name="userid"] > option:nth-child(3)').getAttribute('value');
 
         await Promise.all([
             page.locator('button:has-text("Join Game Session")').click({ force: true }),
@@ -149,8 +173,8 @@ test.describe('discord-integration end-to-end tests', () => {
     });
 });
 
-test.afterAll(async ({ page, context }) => {
-    page.close();
-    context.close();
-});
+
+
+
+
 
