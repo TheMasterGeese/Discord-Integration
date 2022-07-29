@@ -3,6 +3,10 @@
 
 let gameUsers: StoredDocument<User>[]
 let foundryGame : Game;
+
+// Discord user-ids are always exactly 18 digits.
+const DISCORD_ID_LENGTH = 18;
+
 function getGame() : Game {
     return game;
 }
@@ -75,7 +79,9 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
 
     const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
-
+    if (discordID.length !== DISCORD_ID_LENGTH || isNaN(parseInt(discordID))) {
+        ui.notifications.error(foundryGame.i18n.localize("DISCORDINTEGRATION.InvalidIdError"))
+    }
     /*
     const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
     let gmNotifications: boolean

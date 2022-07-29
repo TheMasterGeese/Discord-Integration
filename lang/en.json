@@ -3,5 +3,7 @@
    "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the Webhook to send messages through",
 
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
-   "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?"
+   "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
+
+   "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be an 18-digit number."
 }
