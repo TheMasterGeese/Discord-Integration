@@ -26,6 +26,9 @@ const LANG = 'lang/';
 const TEMPLATES = 'templates/';
 const CSS = 'css/';
 const SOUNDS = 'sounds/';
+const DATA = "Data/";
+const WORLDS = 'worlds/';
+const TEST_WORLD = 'testWorld/';
 
 // declare variables and utility functions
 var PACKAGE = JSON.parse(fs.readFileSync('package.json'));
@@ -88,6 +91,7 @@ function outputTemplates(output = null) { return () => gulp.src(TEMPLATES + GLOB
 function outputStylesCSS(output = null) { return () => gulp.src(CSS + GLOB).pipe(gulp.dest((output || DIST) + CSS)); }
 function outputSounds(output = null) { return () => gulp.src(SOUNDS + GLOB).pipe(gulp.dest((output || DIST) + SOUNDS)); }
 function outputMetaFiles(output = null) { return () => gulp.src(['LICENSE', 'README.md', 'CHANGELOG.md']).pipe(gulp.dest((output || DIST))); }
+function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "\\" + DATA + WORLDS))); }
 
 /**
  * Copy files to module named directory and then compress that folder into a zip
@@ -128,7 +132,7 @@ function lint() {
 
 exports.lint = lint();
 
-/**
+/*
  * Runs Tests via playwright. Builds up and tears down a fresh FoundryVTT container to run the tests on.
  */
 function test() {
@@ -183,7 +187,9 @@ exports.default = gulp.series(
 		, outputStylesCSS(DEV_DIST())
 		, outputSounds(DEV_DIST())
 		, outputMetaFiles(DEV_DIST())
+		
 	)
+	, outputTestWorld()
 	, test()
 	, gulp.parallel(
 		buildSource(true, false)
