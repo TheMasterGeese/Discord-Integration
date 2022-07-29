@@ -46,8 +46,11 @@ test.describe('discord-integration', () => {
     });
     test.describe('should NOT update discord webhook in settings', () => {
 
-        test.skip('when player is NOT GM', async ({ page }) => {
-
+        test('when player is NOT GM', async ({ page }) => {
+            await logOnAsUser(2, page);
+            // Change the webhook
+            await openModuleSettings(page);
+            await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
         });
         test.skip('when input field is empty', async ({ page }) => {
 
@@ -199,9 +202,9 @@ test.describe('discord-integration', () => {
     }
 
     async function openModuleSettings(page: Page) {
-        
+
         // Click the settings icon in the sidemenu
-        await page.locator('a:nth-child(11) > .fas.fa-cogs').click();
+        await page.locator('#sidebar-tabs > a[data-tab="settings"] > .fas.fa-cogs').click();
 
         // Go to the "Configure settings" menu
         await page.locator(CONFIGURE_SETTINGS_BUTTON).click();
