@@ -26,7 +26,6 @@ Hooks.once("init", function () {
         type: String,
         default: "",
     });
-    if(foundryGame) console.log("true")
 });
 
 // add in the extra field for DiscordID

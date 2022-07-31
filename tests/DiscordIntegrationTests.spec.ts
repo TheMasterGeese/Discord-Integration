@@ -52,12 +52,6 @@ test.describe('discord-integration', () => {
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
         });
-        test.skip('when input field is empty', async ({ page }) => {
-
-        });
-        test.skip('when input field has invalid webhook', async ({ page }) => {
-
-        });
     });
     test.describe('should add inputFields below Player Color group', () => {
 
@@ -86,11 +80,9 @@ test.describe('discord-integration', () => {
             ]);
             expect(await page.locator('#discord-id-setting > input[name="discord-id-config"]').getAttribute('value')).toMatch(expectedDiscordId);
         }
-
     });
 
     test.describe('should update user flags when closing user config', () => {
-
         test.skip('when player is GM', async ({ page }) => {
 
         });
@@ -98,7 +90,7 @@ test.describe('discord-integration', () => {
 
         });
 
-        // unit testing
+        // TODO: unit testing
         // case where the user was not found
         // case where the discord-id-config element was not found
     });
