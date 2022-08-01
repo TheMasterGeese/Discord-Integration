@@ -11,7 +11,11 @@ const EXPECTED_PLAYER_DISCORD_ID = '109464021618417664'
 
 const CONFIGURE_SETTINGS_BUTTON ='#settings-game > button[data-action="configure"]';
 const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
-const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]'
+const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
+
+const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
+const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
+
 
 test.describe('discord-integration', () => {
 
@@ -65,30 +69,36 @@ test.describe('discord-integration', () => {
         async function testInputField(userIndex: number, uid: string, expectedDiscordId: string, page: Page) {
             await logOnAsUser(userIndex, page);
             // Click on the "Gamemaster [GM]" in the players list."
-
-            await page.locator(`#player-list > li:nth-child(1)`).focus();
-            await Promise.all([
-                page.locator(`li[data-user-id="${uid}"]`).click({
-                    button: 'right',
-                    force: true
-                }),
-                page.waitForSelector('#context-menu > ol > li:has-text("User Configuration")')
-            ]);
-            await Promise.all([
-                page.locator('#context-menu > ol > li:has-text("User Configuration")').click(),
-                page.waitForSelector(`#user-sheet-${uid}`)
-            ]);
-            expect(await page.locator('#discord-id-setting > input[name="discord-id-config"]').getAttribute('value')).toMatch(expectedDiscordId);
+            await openFirstUserConfiguration(uid, page)
+            expect(await page.locator(DISCORD_ID_INPUT).getAttribute('value')).toMatch(expectedDiscordId);
         }
     });
 
     test.describe('should update user flags when closing user config', () => {
-        test.skip('when player is GM', async ({ page }) => {
-
+        test('when player is GM', async ({ page }) => {
+            await testUpdateUserFlags(1, gm_uid, EXPECTED_GM_DISCORD_ID, page );
         });
-        test.skip('when player is NOT GM', async ({ page }) => {
-
+        test('when player is NOT GM', async ({ page }) => {
+            await testUpdateUserFlags(2, player_uid, EXPECTED_PLAYER_DISCORD_ID, page );
         });
+
+        async function testUpdateUserFlags(userIndex: number, uid: string, expectedDiscordId: string, page: Page) {
+            const newDiscordId = '123456789123456789';
+
+            await logOnAsUser(userIndex, page);
+
+            await openFirstUserConfiguration(uid, page)
+
+            await fillDiscordIdThenClose(newDiscordId, page);
+            await openFirstUserConfiguration(uid, page);
+
+            await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(newDiscordId);
+            await fillDiscordIdThenClose(expectedDiscordId, page);
+
+            await openFirstUserConfiguration(uid, page)
+            await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(expectedDiscordId);
+
+        }
 
         // TODO: unit testing
         // case where the user was not found
@@ -205,17 +215,34 @@ test.describe('discord-integration', () => {
         await page.locator(MODULE_SETTINGS_TAB).click();
     }
 
+    async function openFirstUserConfiguration(uid : string, page: Page) {
+        await page.locator(`#player-list > li[data-user-id="${uid}"]`).focus();
+        await Promise.all([
+            page.locator(`#player-list > li[data-user-id="${uid}"]`).click({
+                button: 'right',
+                force: true
+            }),
+            page.waitForSelector(USER_CONFIGURATION)
+        ]);
+        await Promise.all([
+            page.locator(USER_CONFIGURATION).click(),
+            page.waitForSelector(`#user-sheet-${uid}`)
+        ]);
+    }
     async function fillDiscordWebhookThenClose(newWebhook: string, page : Page) {
-        // Click input[name="discord-integration\.discordWebhook"]
-        await page.locator(DISCORD_WEBHOOK_INPUT).focus();
-
-        // Fill input[name="discord-integration\.discordWebhook"]
-        await page.locator(DISCORD_WEBHOOK_INPUT).fill(newWebhook);
-
-        // Press Enter
-        await page.locator(DISCORD_WEBHOOK_INPUT).press('Enter');
-
+        await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
         await page.waitForSelector(MODULE_SETTINGS_TAB,{ state: 'detached' })
+    }
+
+    async function fillDiscordIdThenClose(newId: string, page : Page) {
+        await fillInput(DISCORD_ID_INPUT, newId, page);
+        await page.waitForSelector(DISCORD_ID_INPUT, { state: 'detached' })
+    }
+
+    async function fillInput(inputElement: string, newValue : string, page : Page) {
+        await page.locator(inputElement).focus();
+        await page.locator(inputElement).fill(newValue);
+        await page.locator(inputElement).press('Enter');
     }
 });
 
