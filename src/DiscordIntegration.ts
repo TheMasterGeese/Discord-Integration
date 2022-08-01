@@ -71,15 +71,14 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
 
 // commit any changes to userConfig
 Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery) {
-
     // find the user that the config was open for
     const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object ).data._id })[0];
-
-
     const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
     if (discordID.length !== DISCORD_ID_LENGTH || isNaN(parseInt(discordID))) {
         ui.notifications.error(foundryGame.i18n.localize("DISCORDINTEGRATION.InvalidIdError"))
+    } else {
+        await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
     }
     /*
     const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
@@ -89,7 +88,6 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     }
     */
     // update the flag
-    await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
     //await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
 });
 

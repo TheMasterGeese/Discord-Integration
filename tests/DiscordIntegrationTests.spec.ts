@@ -1,7 +1,7 @@
 // TODO: Need to figure out a way to faciliate linking to discord server for this test.
-
 import { test, expect, Page, BrowserContext } from '@playwright/test';
-
+// TODO: Localization tests?
+import en from "../lang/en.json";
 let gm_uid: string;
 let player_uid: string;
 
@@ -14,6 +14,7 @@ const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a
 const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
 
 const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
+const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
 const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
 
 
@@ -106,16 +107,31 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should NOT update user flags when closing user config', () => {
-        test.skip('when discord-id-config input has no value', async ({ page }) => {
+        test('when discord-id-config input has no value', async ({ page }) => {
+            await testInvalidInput('', page);
 
         });
-        test.skip('when discord-id-config input is not an 18-digit number', async ({ page }) => {
-
+        test('when discord-id-config input is not an 18-digit number', async ({ page }) => {
+            await testInvalidInput('not an 18-digit nu', page);
+            await testInvalidInput('12345678912345678', page);
+            await testInvalidInput('1234567891234567891', page);
         });
+
+        async function testInvalidInput(invalidInput : string, page: Page) {
+            await logOnAsUser(1, page);
+
+            await openFirstUserConfiguration(gm_uid, page)
+
+            await fillDiscordIdThenClose(invalidInput, page);
+            await page.waitForSelector(INVALID_DISCORD_ID_NOTIFICATION_EN);
+
+            await openFirstUserConfiguration(gm_uid, page)
+            await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(EXPECTED_GM_DISCORD_ID);
+        }
     });
 
     test.describe('should handle new chat messages', () => {
-        test.skip('when there is a  tag in the message for a user', async ({ page }) => {
+        test.skip('when there is a tag in the message for a user', async ({ page }) => {
 
         });
         test.skip('when there is are two tags in the message: one for a user', async ({ page }) => {
