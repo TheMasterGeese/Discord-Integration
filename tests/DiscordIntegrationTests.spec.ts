@@ -1,10 +1,11 @@
 // TODO: Need to figure out a way to faciliate linking to discord server for this test.
-import { test, expect, Page, BrowserContext } from '@playwright/test';
+import { test, expect, Page, BrowserContext, ConsoleMessage } from '@playwright/test';
 // TODO: Localization tests?
 import en from "../lang/en.json";
 let gm_uid: string;
 let player_uid: string;
 
+const SEND_DISCORD_MESSAGE_HOOK_SUCCESS = "Send Discord Message Hook successfully caught."
 const EXPECTED_WEBHOOK = "testwebhook";
 const EXPECTED_GM_DISCORD_ID = '356634652963897345';
 const EXPECTED_PLAYER_DISCORD_ID = '109464021618417664'
@@ -17,6 +18,7 @@ const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]'
 const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
 const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
 
+const CHAT_TEXT_AREA = '#chat-message';
 
 test.describe('discord-integration', () => {
 
@@ -131,19 +133,42 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should handle new chat messages', () => {
-        test.skip('when there is a tag in the message for a user', async ({ page }) => {
-
-        });
-        test.skip('when there is are two tags in the message: one for a user', async ({ page }) => {
-
-        });
-        test.skip('when there is are two tags in the message: both for users', async ({ page }) => {
-
-        });
-        test.skip('when there is a @Discord tag in the message', async ({ page }) => {
-
+        
+        test.beforeEach( async ({ page }) => {
+            await logOnAsUser(1, page);
+            await page.evaluate(async () => {
+                Hooks.once("sendDiscordMessage", () => {
+                    console.log("Send Discord Message Hook successfully caught.")   
+                });
+            });
         });
 
+        test('when there is a tag in the message for a user', async ({ page }) => {      
+            await enterChatMessageAndAwaitSend('@Gamemaster test', page);
+        });
+        test('when there is are two tags in the message: one for a user', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', page);
+        });
+        test('when there is are two tags in the message: both for users', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Gamemaster @Player test', page);
+        });
+        test('when there is a @Discord tag in the message', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Discord test', page);
+        });
+
+        async function enterChatMessageAndAwaitSend(message: string, page: Page) {
+            await page.locator(CHAT_TEXT_AREA).focus();
+            await page.locator(CHAT_TEXT_AREA).fill(message);
+
+            await Promise.all([
+                page.locator(CHAT_TEXT_AREA).press('Enter'),
+                page.waitForEvent('console', (consoleMessage: ConsoleMessage) => {
+                    return new Promise<boolean>((resolve) => {
+                        resolve(consoleMessage.text() === SEND_DISCORD_MESSAGE_HOOK_SUCCESS)    
+                    });
+                })
+            ]);
+        }
         // unit testing
         // case where there are no users
     });
@@ -260,6 +285,7 @@ test.describe('discord-integration', () => {
         await page.locator(inputElement).fill(newValue);
         await page.locator(inputElement).press('Enter');
     }
+
 });
 
 
