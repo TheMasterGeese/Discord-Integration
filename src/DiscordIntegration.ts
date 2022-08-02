@@ -117,9 +117,7 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     })
 
     if (shouldSendMessage) {
-        sendDiscordMessage(message).catch((reason) => {
-            console.error(reason);
-        });
+        Hooks.callAll("sendDiscordMessage", message);
     }
 });
 
