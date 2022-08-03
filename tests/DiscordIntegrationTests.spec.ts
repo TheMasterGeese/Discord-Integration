@@ -1,5 +1,6 @@
 // TODO: Need to figure out a way to faciliate linking to discord server for this test.
 import { test, expect, Page, BrowserContext, ConsoleMessage } from '@playwright/test';
+import { OperationCanceledException, resolveModuleName } from 'typescript';
 // TODO: Localization tests?
 import en from "../lang/en.json";
 let gm_uid: string;
@@ -10,7 +11,7 @@ const EXPECTED_WEBHOOK = "testwebhook";
 const EXPECTED_GM_DISCORD_ID = '356634652963897345';
 const EXPECTED_PLAYER_DISCORD_ID = '109464021618417664'
 
-const CONFIGURE_SETTINGS_BUTTON ='#settings-game > button[data-action="configure"]';
+const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
 const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
 const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
 
@@ -79,10 +80,10 @@ test.describe('discord-integration', () => {
 
     test.describe('should update user flags when closing user config', () => {
         test('when player is GM', async ({ page }) => {
-            await testUpdateUserFlags(1, gm_uid, EXPECTED_GM_DISCORD_ID, page );
+            await testUpdateUserFlags(1, gm_uid, EXPECTED_GM_DISCORD_ID, page);
         });
         test('when player is NOT GM', async ({ page }) => {
-            await testUpdateUserFlags(2, player_uid, EXPECTED_PLAYER_DISCORD_ID, page );
+            await testUpdateUserFlags(2, player_uid, EXPECTED_PLAYER_DISCORD_ID, page);
         });
 
         async function testUpdateUserFlags(userIndex: number, uid: string, expectedDiscordId: string, page: Page) {
@@ -119,7 +120,7 @@ test.describe('discord-integration', () => {
             await testInvalidInput('1234567891234567891', page);
         });
 
-        async function testInvalidInput(invalidInput : string, page: Page) {
+        async function testInvalidInput(invalidInput: string, page: Page) {
             await logOnAsUser(1, page);
 
             await openFirstUserConfiguration(gm_uid, page)
@@ -133,17 +134,17 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should handle new chat messages', () => {
-        
-        test.beforeEach( async ({ page }) => {
+
+        test.beforeEach(async ({ page }) => {
             await logOnAsUser(1, page);
             await page.evaluate(async () => {
                 Hooks.once("sendDiscordMessage", () => {
-                    console.log("Send Discord Message Hook successfully caught.")   
+                    console.log("Send Discord Message Hook successfully caught.")
                 });
             });
         });
 
-        test('when there is a tag in the message for a user', async ({ page }) => {      
+        test('when there is a tag in the message for a user', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Gamemaster test', page);
         });
         test('when there is are two tags in the message: one for a user', async ({ page }) => {
@@ -164,7 +165,7 @@ test.describe('discord-integration', () => {
                 page.locator(CHAT_TEXT_AREA).press('Enter'),
                 page.waitForEvent('console', (consoleMessage: ConsoleMessage) => {
                     return new Promise<boolean>((resolve) => {
-                        resolve(consoleMessage.text() === SEND_DISCORD_MESSAGE_HOOK_SUCCESS)    
+                        resolve(consoleMessage.text() === SEND_DISCORD_MESSAGE_HOOK_SUCCESS)
                     });
                 })
             ]);
@@ -174,14 +175,31 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should NOT handle new chat message', () => {
-        test.skip('when there are no tags in the message', async ({ page }) => {
-
+        test('when there are no tags in the message', async ({ page }) => {
+            await logOnAsUser(1, page);
+            await enterChatMessageAndAwaitLog('test', page);          
         });
 
-        test.skip('when there is a tag in the message but not for a user', async ({ page }) => {
-
+        test('when there is a tag in the message but not for a user', async ({ page }) => {
+            await logOnAsUser(1, page);
+            await enterChatMessageAndAwaitLog('@NotAUser test', page);   
         });
 
+        async function enterChatMessageAndAwaitLog(message: string, page: Page) {
+            
+            await page.locator(CHAT_TEXT_AREA).focus();
+            await page.locator(CHAT_TEXT_AREA).fill(message);
+            await Promise.all([
+                page.locator(CHAT_TEXT_AREA).press('Enter'),
+                page.waitForEvent('console', (consoleMessage: ConsoleMessage) => {
+                    return new Promise<boolean>((resolve) => {
+                        if (consoleMessage.text() === 'Message not sent.') {
+                            resolve(true);
+                        }
+                    });
+                })
+            ]);
+        }
     });
 
     test.describe('should send message to Discord', async () => {
@@ -256,7 +274,7 @@ test.describe('discord-integration', () => {
         await page.locator(MODULE_SETTINGS_TAB).click();
     }
 
-    async function openFirstUserConfiguration(uid : string, page: Page) {
+    async function openFirstUserConfiguration(uid: string, page: Page) {
         await page.locator(`#player-list > li[data-user-id="${uid}"]`).focus();
         await Promise.all([
             page.locator(`#player-list > li[data-user-id="${uid}"]`).click({
@@ -270,17 +288,17 @@ test.describe('discord-integration', () => {
             page.waitForSelector(`#user-sheet-${uid}`)
         ]);
     }
-    async function fillDiscordWebhookThenClose(newWebhook: string, page : Page) {
+    async function fillDiscordWebhookThenClose(newWebhook: string, page: Page) {
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
-        await page.waitForSelector(MODULE_SETTINGS_TAB,{ state: 'detached' })
+        await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }
 
-    async function fillDiscordIdThenClose(newId: string, page : Page) {
+    async function fillDiscordIdThenClose(newId: string, page: Page) {
         await fillInput(DISCORD_ID_INPUT, newId, page);
         await page.waitForSelector(DISCORD_ID_INPUT, { state: 'detached' })
     }
 
-    async function fillInput(inputElement: string, newValue : string, page : Page) {
+    async function fillInput(inputElement: string, newValue: string, page: Page) {
         await page.locator(inputElement).focus();
         await page.locator(inputElement).fill(newValue);
         await page.locator(inputElement).press('Enter');
