@@ -1,15 +1,16 @@
 // TODO: Need to figure out a way to faciliate linking to discord server for this test.
-import { test, expect, Page, BrowserContext, ConsoleMessage } from '@playwright/test';
-import { OperationCanceledException, resolveModuleName } from 'typescript';
+import { test, expect, Page, Response, BrowserContext, ConsoleMessage, Route } from '@playwright/test';
+import { TestEnvironment } from "./TestEnvironment"
 // TODO: Localization tests?
 import en from "../lang/en.json";
 let gm_uid: string;
 let player_uid: string;
+let webhook: string;
 
 const SEND_DISCORD_MESSAGE_HOOK_SUCCESS = "Send Discord Message Hook successfully caught."
-const EXPECTED_WEBHOOK = "testwebhook";
-const EXPECTED_GM_DISCORD_ID = '356634652963897345';
-const EXPECTED_PLAYER_DISCORD_ID = '109464021618417664'
+const EXPECTED_WEBHOOK = TestEnvironment.DISCORD_WEBHOOK;
+const EXPECTED_GM_DISCORD_ID = TestEnvironment.GM_DISCORD_ID;
+const EXPECTED_PLAYER_DISCORD_ID = TestEnvironment.PLAYER_DISCORD_ID;
 
 const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
 const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
@@ -23,6 +24,14 @@ const CHAT_TEXT_AREA = '#chat-message';
 
 test.describe('discord-integration', () => {
 
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        await logOnAsUser(1, page);
+
+        // Change the webhook
+        await openModuleSettings(page);
+        await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+    })
     test('should register settings on init', async ({ page }) => {
 
         await logOnAsUser(1, page);
@@ -186,7 +195,6 @@ test.describe('discord-integration', () => {
         });
 
         async function enterChatMessageAndAwaitLog(message: string, page: Page) {
-            
             await page.locator(CHAT_TEXT_AREA).focus();
             await page.locator(CHAT_TEXT_AREA).fill(message);
             await Promise.all([
@@ -202,31 +210,66 @@ test.describe('discord-integration', () => {
         }
     });
 
-    test.describe('should send message to Discord', async () => {
-        test.skip('when all ids and hooks have been setup', async ({ page }) => {
-
+    test.describe('should send message to Discord', () => {
+        test('when message has @Discord tag', async ({ page }) => {
+            await sendMessageCatchRequest(
+                " Hello World",
+                '@Discord Hello World',
+                page);
         });
+        test('when message has user tags', async ({ page }) => {
+            await sendMessageCatchRequest(
+                `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`, 
+                '@Gamemaster @Player Hello World',
+                
+                page);
+        });
+
+        async function sendMessageCatchRequest(expectedMessage : string, chatMessage : string, page : Page) {
+            const success = 'Message sending test passed!'
+            const responseCode = 200;
+            const message = {"content": expectedMessage};
+            await logOnAsUser(1, page);
+            await page.route(webhook, async (route : Route) => {
+                const request = route.request();
+                expect(request.method()).toMatch('POST');
+                expect(request.url()).toMatch(webhook);
+                expect(await request.headerValue('content-type')).toMatch('application/json');
+                expect(JSON.parse(request.postData())).toEqual(message);
+                route.fulfill( {
+                    status: responseCode,
+                    body: success
+                })
+            });
+            await Promise.all([
+                fillInput(CHAT_TEXT_AREA, chatMessage, page),
+                page.waitForResponse(async (response : Response) => {
+                    const responseText = await response.text();
+                    return new Promise<boolean>((resolve) => {
+                        resolve(response.status() === responseCode
+                            && responseText === success);
+                    });
+                })
+            ]);
+            await page.unroute(webhook);
+        }
     });
 
     test.describe('should NOT send message to Discord', async () => {
         test.skip('when the user posting the message does not have a discordId set', async ({ page }) => {
-
+            
         });
-        test.skip('when the user posting the message has a discordId that does not link to a discord user', async ({ page }) => {
 
-        });
-        test.skip('when the user posting the message has a discordId that does not link to a discord user in the server', async ({ page }) => {
-
-        });
         test.skip('when there is no discord webhook set', async ({ page }) => {
 
         });
-        test.skip('when the discord webhook does link to a discord server', async ({ page }) => {
 
-        });
         test.skip('when the message does not stringify into JSON', async ({ page }) => {
 
         });
+
+        // TODO Figure out how to test later:
+        
     });
     // TODO: How will we handle using a discord server for this test? Just have one up all the time?
     test.describe('should handle discord response', async () => {
@@ -234,6 +277,8 @@ test.describe('discord-integration', () => {
 
         });
         test.skip('when the response returns an error', async ({ page }) => {
+        // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
+        // when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
 
         });
     });
@@ -254,12 +299,12 @@ test.describe('discord-integration', () => {
         // get and then set the GM and user ids
         gm_uid = await page.locator('select[name="userid"] > option:nth-child(2)').getAttribute('value');
         player_uid = await page.locator('select[name="userid"] > option:nth-child(3)').getAttribute('value');
-
         await Promise.all([
             page.locator('button:has-text("Join Game Session")').click({ force: true }),
             // TODO: Find a more graceful way to cast window to a type
             page.waitForFunction(() => (window as any).game?.ready)
         ]);
+        webhook = await page.evaluate(() => { return game.settings.get('discord-integration', 'discordWebhook' ) }) as string;
     }
 
     async function openModuleSettings(page: Page) {
