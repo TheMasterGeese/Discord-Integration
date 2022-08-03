@@ -5,5 +5,12 @@
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
 
-   "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be an 18-digit number."
+   "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be an 18-digit number.",
+
+   "DISCORDINTEGRATION.CouldNotSendMessage" : "Could not send Discord message: ",
+
+   "DISCORDINTEGRATION.UserHasNoIdError" : " has no Discord ID set.",
+   "DISCORDINTEGRATION.NoDiscordWebhookError" : "No Discord Webhook has been set. Go to Module Settings to enter the Discord Webhook.",
+   "DISCORDINTEGRATION.CouldNotStringifyJsonError" : "JSON could not stringify the message."
+
 }
