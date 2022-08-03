@@ -118,6 +118,9 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
 
     if (shouldSendMessage) {
         Hooks.callAll("sendDiscordMessage", message);
+    } else {
+        // TODO: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
+        console.log("Message not sent.")
     }
 });
 
