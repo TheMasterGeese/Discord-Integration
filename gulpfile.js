@@ -1,9 +1,7 @@
-const cb = require('cb');
 const del = require('del');
 require('dotenv').config();
 const eslint = require('gulp-eslint');
 var fs = require('fs')
-const fse = require('fs-extra');
 const gulp = require('gulp');
 const gulpIf = require('gulp-if');
 const minify = require('gulp-minify');
@@ -28,7 +26,6 @@ const CSS = 'css/';
 const SOUNDS = 'sounds/';
 const DATA = "Data/";
 const WORLDS = 'worlds/';
-const TEST_WORLD = 'testWorld/';
 
 // declare variables and utility functions
 var PACKAGE = JSON.parse(fs.readFileSync('package.json'));
