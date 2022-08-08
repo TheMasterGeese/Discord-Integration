@@ -1,0 +1,8 @@
+{"key":"core.time","value":"0","_id":"TSogPyuzABbMFku0"}
+{"key":"core.permissions","value":"{\"ACTOR_CREATE\":[3,4],\"BROADCAST_AUDIO\":[2,3,4],\"BROADCAST_VIDEO\":[2,3,4],\"DRAWING_CREATE\":[2,3,4],\"ITEM_CREATE\":[3,4],\"FILES_BROWSE\":[2,3,4],\"FILES_UPLOAD\":[3,4],\"JOURNAL_CREATE\":[2,3,4],\"MACRO_SCRIPT\":[1,2,3,4],\"MESSAGE_WHISPER\":[1,2,3,4],\"NOTE_CREATE\":[2,3,4],\"SETTINGS_MODIFY\":[3,4],\"SHOW_CURSOR\":[1,2,3,4],\"SHOW_RULER\":[1,2,3,4],\"TEMPLATE_CREATE\":[1,2,3,4],\"TOKEN_CREATE\":[3,4],\"TOKEN_CONFIGURE\":[2,3,4],\"WALL_DOORS\":[1,2,3,4]}","_id":"SIZOhHVfjwDEdIo2"}
+{"key":"core.nue.shownTips","value":"true","_id":"9aCZzGLEOKxdm9wV"}
+{"key":"core.moduleConfiguration","value":"{\"discord-integration\":true}","_id":"XdNC3bsQgpkWPDeF"}
+{"key":"discord-integration.discordWebhook","value":"\"testWebhook\"","_id":"CGoJsWJfypoJQExi"}
+{"key":"pf2e.worldSystemVersion","value":"\"3.12.2.10\"","_id":"6dQIuGyXhTKFUm8I"}
+{"key":"pf2e.worldClock.worldCreatedOn","value":"\"2022-07-24T21:49:55.072Z\"","_id":"nTlNVIqrHyEaKYLr"}
+{"key":"pf2e.worldSchemaVersion","value":"0.764","_id":"x55ufRDd8smIrZoP"}

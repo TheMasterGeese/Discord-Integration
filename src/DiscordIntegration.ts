@@ -2,13 +2,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 let gameUsers: StoredDocument<User>[]
-let foundryGame : Game;
-function getGame() : Game {
-    return game as Game;
+let foundryGame: Game;
+
+// Discord user-ids are always exactly 18 digits.
+const DISCORD_ID_LENGTH = 18;
+
+function getGame(): Game {
+    return game;
 }
 
 Hooks.once("ready", function () {
-    gameUsers = (game as Game).users?.contents;
+    gameUsers = (game.users).contents;
 });
 
 Hooks.once("init", function () {
@@ -28,7 +32,7 @@ Hooks.once("init", function () {
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object as User).data._id })[0];
+    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -62,22 +66,20 @@ Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery
                 ${gmNotificationCheckbox}
             </div>`
         */
-        const discordIDSettingElement = element.find('#discord-id-setting');
-        //discordIDSettingElement.after([$(gmNotificationSetting)]);
     }
-
 });
 
 // commit any changes to userConfig
 Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery) {
-
     // find the user that the config was open for
-    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object as User).data._id })[0];
-
-
+    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object).data._id })[0];
     const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
-
+    if (discordID.length !== DISCORD_ID_LENGTH || isNaN(parseInt(discordID))) {
+        ui.notifications.error(foundryGame.i18n.localize("DISCORDINTEGRATION.InvalidIdError"))
+    } else {
+        await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
+    }
     /*
     const gmNotificationElement = element.find("input[name = 'gm-notification-config']");
     let gmNotifications: boolean
@@ -86,7 +88,6 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     }
     */
     // update the flag
-    await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
     //await foundryUser.update({ 'flags.discord-integration.sendGMNotifications': gmNotifications });
 });
 
@@ -116,9 +117,10 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     })
 
     if (shouldSendMessage) {
-        sendDiscordMessage(message).catch((reason) => {
-            console.error(reason);
-        });
+        Hooks.callAll("sendDiscordMessage", message);
+    } else {
+        // TODO: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
+        console.log("Message not sent.")
     }
 });
 
@@ -137,6 +139,16 @@ Hooks.on("sendDiscordMessage", function (message: string) {
  */
 async function sendDiscordMessage(message: string) {
 
+    let sendMessage = true;
+
+    const discordWebhook = game.settings.get('discord-integration', 'discordWebhook') as string;
+    if (!discordWebhook) {
+        ui.notifications.error(
+            foundryGame.i18n.localize("DISCORDINTEGRATION.CouldNotSendMessage")
+            + foundryGame.i18n.localize("DISCORDINTEGRATION.NoDiscordWebhookError"))
+        return;
+    }
+
     // search for any @<username> strings in the message
     const userNames: string[] = gameUsers.map((user: User) => { return user.name }); // get a list of usernames
     const usersToPing: string[] = [];
@@ -151,11 +163,18 @@ async function sendDiscordMessage(message: string) {
 
     // if it found any @<username> values, replace the values in the message with appropriate discord pings, then send discord message.
     if (usersToPing.length !== 0) {
-
         usersToPing.forEach((userName: string) => {
             const currentUser: User | undefined = gameUsers.filter((user: User) => { return user.data.name === userName })[0];
             if (currentUser) {
                 const currentUserDiscordID: string = currentUser.getFlag('discord-integration', 'discordID') as string;
+                if (!currentUserDiscordID) {
+                    ui.notifications.error(
+                        foundryGame.i18n.localize("DISCORDINTEGRATION.CouldNotSendMessage")
+                        + currentUser.name
+                        + foundryGame.i18n.localize("DISCORDINTEGRATION.UserHasNoIdError"))
+                    sendMessage = false;
+                    return;
+                }
                 message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`)
             }
         })
@@ -168,10 +187,22 @@ async function sendDiscordMessage(message: string) {
         "content": message
     }
 
-    await $.ajax({
-        method: 'POST',
-        url: game.settings.get('discord-integration', 'discordWebhook') as string,
-        contentType: "application/json",
-        data: JSON.stringify(messageJSON)
-    });
+    let jsonMessage: string;
+    try {
+        jsonMessage = JSON.stringify(messageJSON);
+    } catch (e) {
+        ui.notifications.error(
+            foundryGame.i18n.localize("DISCORDINTEGRATION.CouldNotSendMessage")
+            + foundryGame.i18n.localize("DISCORDINTEGRATION.CouldNotStringifyJsonError"))
+        sendMessage = false;
+    }
+
+    if (sendMessage) {
+        await $.ajax({
+            method: 'POST',
+            url: discordWebhook,
+            contentType: "application/json",
+            data: jsonMessage
+        });
+    }
 }

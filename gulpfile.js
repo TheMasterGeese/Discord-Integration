@@ -1,4 +1,3 @@
-const cb = require('cb');
 const del = require('del');
 require('dotenv').config();
 const eslint = require('gulp-eslint');
@@ -17,6 +16,7 @@ const zip = require('gulp-zip');
 
 const exec = util.promisify(require('child_process').exec);
 
+// Datapaths for specific folders, both in this repo and in the dev destination
 const GLOB = '**/*';
 const DIST = 'dist/';
 const BUNDLE = 'bundle/';
@@ -25,87 +25,60 @@ const LANG = 'lang/';
 const TEMPLATES = 'templates/';
 const CSS = 'css/';
 const SOUNDS = 'sounds/';
+const DATA = "Data/";
+const WORLDS = 'worlds/';
 
 // declare variables and utility functions
+/**
+ * The contents of package.json
+ */
 var PACKAGE = JSON.parse(fs.readFileSync('package.json'));
+
+/**
+ * Replaces all instances of the pattern in the string
+ * @param {*} pattern The pattern to be replaced
+ * @param {*} replace The new value to replace instances of the pattern.
+ * @returns The string with occurrences of the pattern replaced.
+ */
 String.prototype.replaceAll = function (pattern, replace) { return this.split(pattern).join(replace); }
-function reloadPackage(cb) { PACKAGE = JSON.parse(fs.readFileSync('package.json')); cb(); }
+
+/**
+ * Refreshes the value of PACKAGE based on changes made to package.json
+ * @param {*} callback callback function to execute after reloading the package.
+ */
+function reloadPackage(callback) { PACKAGE = JSON.parse(fs.readFileSync('package.json')); callback(); }
+
+/**
+ * Generates the local filepath for the modules on a locally-deployed version of FoundryVTT.
+ * @returns The generated filepath.
+ */
 function DEV_DIST() { return path.join(process.env.LOCAL_DEV_DIR, PACKAGE.name + '/'); }
+/**
+ * Wrapper for del to allow it to be considered a gulp task.
+ * 
+ * See https://www.npmjs.com/package/del for more information on the del function.
+ * 
+ * @param {*} patterns The patterns to pass to del
+ * @param {*} options The options to pass to del.
+ * @returns The deleted paths.
+ */
 function pdel(patterns, options) { return () => { return del(patterns, options); }; }
+
+/**
+ * Wrapper for console logging a message, then executing a callback function.
+ * 
+ * @param {*} message The message to log to the console.
+ * @returns The result of the callback function execution.
+ */
 function plog(message) { return (cb) => { console.log(message); cb() }; }
 
-function isFixed(file) {
-	return file.eslint != null && file.eslint.fixed;
-}
-
-/**
- * Starts FoundryVTT locally in a docker container.
- */
-function start() {
-	return () => {
-		return new Promise(resolve => {
-			exec(`docker-compose up -d`, function (err, stdout, stderr) {
-				console.log(stdout);
-				console.log(stderr);
-				cb(err);
-				resolve(true);
-			});
-		});
-	}
-}
-exports.start = start();
-
-/**
- * Runs eslint
- */
-function lint() {
-	return () => {
-		return gulp.src(MODULE_SOURCE + GLOB)
-			.pipe(eslint(".eslintrc"))
-			.pipe(eslint({ fix: true }))
-			.pipe(eslint.format())
-			.pipe(gulpIf(isFixed, gulp.dest(MODULE_SOURCE)))
-			.pipe(eslint.failAfterError());
-	}
-}
-exports.lint = lint();
-exports.step_lint = lint();
-
-/**
- * Runs Tests via playwright
- */
-function test() {
-	return async () => {
-		// spawn a process that starts up foundry
-		const foundryUp = spawn('docker-compose', ['up'], { detached: true });
-		//const foundry = spawn('node', [ 'C:/Users/Jon/FoundryVTT-9.255/resources/app/main.js', 'C:/Users/Jon/foundryData'], { detached: true } );
-		return new Promise(resolve => {
-			exec(`npx playwright test --config ${MODULE}/test`, function (err, stdout, stderr) {
-				console.log(stdout);
-				console.log(stderr);
-				cb(err);
-				resolve(true);
-			});
-		}).finally(() => {
-			foundryUp.kill()
-			spawn('docker-compose', ['down'], { detached: true });
-		});
-
-		/*
-		return exec(`npx playwright test --config ${MODULE}/test`, function (err, stdout, stderr) {	
-			console.log(stdout);
-			console.log(stderr);
-			cb(err);
-			foundry.kill();
-		});
-		*/
-	}
-}
-exports.test = test();
-exports.step_test = test();
 /**
  * Compile the source code into the distribution directory
  * @param {Boolean} keepSources Include the TypeScript SourceMaps
+ * @param {Boolean} minifySources Whether to minify the source files.
+ * @param {string} output Where to output the build results, defaults to the current working directory.
+ * 
+ * @returns ReadWriteStream for the build results.
  */
 function buildSource(keepSources, minifySources = false, output = null) {
 	return () => {
@@ -125,6 +98,10 @@ function buildSource(keepSources, minifySources = false, output = null) {
 
 /**
  * Builds the module manifest based on the package, sources, and css.
+ * 
+ * @param {string} output Where to output the build results, defaults to the current working directory.
+ * 
+ * @throws Error if no files are found in the src or css directories.
  */
 function buildManifest(output = null) {
 	const files = []; // Collector for all the file paths
@@ -156,6 +133,7 @@ function outputTemplates(output = null) { return () => gulp.src(TEMPLATES + GLOB
 function outputStylesCSS(output = null) { return () => gulp.src(CSS + GLOB).pipe(gulp.dest((output || DIST) + CSS)); }
 function outputSounds(output = null) { return () => gulp.src(SOUNDS + GLOB).pipe(gulp.dest((output || DIST) + SOUNDS)); }
 function outputMetaFiles(output = null) { return () => gulp.src(['LICENSE', 'README.md', 'CHANGELOG.md']).pipe(gulp.dest((output || DIST))); }
+function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "\\" + DATA + WORLDS))); }
 
 /**
  * Copy files to module named directory and then compress that folder into a zip
@@ -178,37 +156,9 @@ function compressDistribution() {
 }
 
 /**
- * Starts FoundryVTT locally in a docker container.
- */
-function start() {
-	return async function start() {
-		return new Promise(async (resolve) => {
-			let { stdout, stderr } = await exec(`docker-compose up -d`);
-			console.log(stdout);
-			console.log(stderr);
-			resolve(true);
-		});
-	}
-}
-exports.start = start();
-
-/**
- * Stops a locally running FoundryVTT container.
- */
-function kill() {
-	return async function kill() {
-		return new Promise(async (resolve) => {
-			let { stdout, stderr } = await exec(`docker-compose down`);
-			console.log(stdout);
-			console.log(stderr);
-			resolve(true);
-		});
-	}
-}
-exports.kill = kill();
-
-/**
  * Runs eslint. Fixes any automatically-fixable errors, and will fail if any errors are encountered (but not warnings)
+ * 
+ * @returns ReadWriteStream for the build results so far.
  */
 function lint() {
 	return function lint() {
@@ -219,22 +169,40 @@ function lint() {
 			.pipe(gulpIf(isFixed, gulp.dest(SOURCE)))
 			.pipe(eslint.failAfterError());
 	}
+	/**
+	 * Helper function to determine if a file was fixed by eslint
+	 * @param {*} file The file to examine
+	 * @returns True if the file was fixed, false if it was not or the file does not exist.
+	 */
 	function isFixed(file) {
 		return file.eslint != null && file.eslint.fixed;
 	}
 }
 
 exports.lint = lint();
-/**
+
+/*
  * Runs Tests via playwright. Builds up and tears down a fresh FoundryVTT container to run the tests on.
  */
 function test() {
 	return async function test() {
-		start();
+		// Startup docker container
+		let { stdout, stderr } = await exec(`docker-compose up -d`);
+		console.log(stdout);
+		console.log(stderr);
+		// Wait for the state of the docker container to be "healthy". Waiting for the container startup isn't enough, it takes 
+		// roughly 1 more minute after the container is started for FoundryVTT to be ready, indicated by the "healthy" status.
+		do {
+			({ stdout, stderr } = await exec('docker inspect --format="{{json .State.Health.Status}}" discord-integration-foundry-1'));
+		} while (stdout !== '"healthy"\n');
+		// run tests
 		({ stdout, stderr } = await exec(`npx playwright test`));
 		console.log(stdout);
 		console.log(stderr);
-		kill();
+		// tear down docker container
+		({ stdout, stderr } = await exec(`docker-compose down`));
+		console.log(stdout);
+		console.log(stderr);
 	}
 }
 exports.test = test();
@@ -260,11 +228,17 @@ function cleanAll() {
 exports.cleanAll = cleanAll();
 
 /**
- * Default Build operation
+ * Default Build operation.
+ * 
+ * Lints the module code, then clears out and rebuilds the dev directory with test setup and the module code.
+ * 
+ * Runs tests on the code, then performs all build functions to output the build results as a zip file.
  */
 exports.default = gulp.series(
 	lint()
-	, cleanAll()	
+	, dev()
+	, outputTestWorld()
+	, test()
 	, gulp.parallel(
 		buildSource(true, false)
 		, buildManifest()
@@ -274,62 +248,32 @@ exports.default = gulp.series(
 		, outputSounds()
 		, outputMetaFiles()
 	)
-	, test()
-);
-
-/**
- * Extends the default build task by copying the result to the Development Environment
- */
-exports.dev = gulp.series(
-	lint()
-	, pdel([DEV_DIST() + GLOB], { force: true })
-	, gulp.parallel(
-		buildSource(true, false, DEV_DIST())
-		, buildManifest(DEV_DIST())
-		, outputLanguages(DEV_DIST())
-		, outputTemplates(DEV_DIST())
-		, outputStylesCSS(DEV_DIST())
-		, outputSounds(DEV_DIST())
-		, outputMetaFiles(DEV_DIST())
-	)
-);
-
-/**
- * Performs a default build and then zips the result into a bundle
- */
-exports.zip = gulp.series(
-	lint()
-	, cleanAll()
-	, gulp.parallel(
-		buildSource(false, false)
-		, buildManifest()
-		, outputLanguages()
-		, outputTemplates()
-		, outputStylesCSS()
-		, outputSounds()
-		, outputMetaFiles()
-	)
-	, test()
 	, compressDistribution()
 	, pdel([DIST])
 );
+
 /**
- * Sets up a file watch on the project to detect any file changes and automatically rebuild those components.
+ * Builds the current code/configuration to the local dev environment.
  */
-exports.watch = function () {
-	exports.default();
-	gulp.watch(SOURCE + GLOB, gulp.series(pdel(DIST + SOURCE), buildSource(true, false)));
-	gulp.watch([CSS + GLOB, 'module.json', 'package.json'], buildManifest());
-	gulp.watch(LANG + GLOB, gulp.series(pdel(DIST + LANG), outputLanguages()));
-	gulp.watch(TEMPLATES + GLOB, gulp.series(pdel(DIST + TEMPLATES), outputTemplates()));
-	gulp.watch(CSS + GLOB, gulp.series(pdel(DIST + CSS), outputStylesCSS()));
-	gulp.watch(SOUNDS + GLOB, gulp.series(pdel(DIST + SOUNDS), outputSounds()));
-	gulp.watch(['LICENSE', 'README.md', 'CHANGELOG.md'], outputMetaFiles());
+function dev() {
+	return gulp.series(
+		pdel([DEV_DIST() + GLOB], { force: true })
+		, gulp.parallel(
+			buildSource(true, false, DEV_DIST())
+			, buildManifest(DEV_DIST())
+			, outputLanguages(DEV_DIST())
+			, outputTemplates(DEV_DIST())
+			, outputStylesCSS(DEV_DIST())
+			, outputSounds(DEV_DIST())
+			, outputMetaFiles(DEV_DIST())
+		)
+	);
 }
+
 /**
  * Sets up a file watch on the project to detect any file changes and automatically rebuild those components, and then copy them to the Development Environment.
  */
-exports.devWatch = function () {
+exports.watch = function () {
 	const devDist = DEV_DIST();
 	exports.dev();
 	gulp.watch(SOURCE + GLOB, gulp.series(plog('deleting: ' + devDist + SOURCE + GLOB), pdel(devDist + SOURCE + GLOB, { force: true }), buildSource(true, false, devDist), plog('sources done.')));
