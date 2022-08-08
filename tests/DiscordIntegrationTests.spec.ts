@@ -307,20 +307,68 @@ test.describe('discord-integration', () => {
         // TODO Figure out how to test later:   
             // a message that can't stringify into JSON?
     });
-    
+
     // TODO: How will we handle using a discord server for this test? Just have one up all the time?
     test.describe('should handle discord response', async () => {
-        test.skip('when the response comes back successfully', async ({ page }) => {
+        test.beforeAll(async ({ browser }) => {
+            const page = await browser.newPage();
+            await logOnAsUser(1, page);
+    
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
+            page.close();
+        })
+
+        test('when the response comes back successfully', async ({ page }) => {
+            const responseCode = 204;
+
+            await logOnAsUser(1, page);
             await Promise.all([
-                fillInput(CHAT_TEXT_AREA, '@Gamemaster Hello World', page),
-                page.waitForSelector(NO_DISCORD_WEBHOOK_NOTIFICATION_EN)
+                page.waitForResponse((response : Response) => {
+                    return new Promise<boolean>((resolve) => {
+                        resolve(response.status() === responseCode);
+                    });
+                }),
+                fillInput(CHAT_TEXT_AREA, '@Gamemaster Hello World', page)
             ]);
         });
-        test.skip('when the response returns an error', async ({ page }) => {
-        // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
-        // when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
+        test('when the response returns an error due to an invalid webhook', async ({ page }) => {
+            const responseCode = 404;
 
+            await logOnAsUser(1, page);
+    
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
+            await Promise.all([
+                page.waitForResponse((response : Response) => {
+                    return new Promise<boolean>((resolve) => {
+                        resolve(response.status() === responseCode);
+                    });
+                }),
+                fillInput(CHAT_TEXT_AREA, '@Gamemaster Hello World', page)
+            ]);
+
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
         });
+
+        test.afterAll(async ({ browser }) => {
+            const page = await browser.newPage();
+            await logOnAsUser(1, page);
+    
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+            page.close();
+        })
+
+         // TODO: when the user posting the message has a discordId that is valid but does not link to an actual discord user?
+        // TODO: when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
     });
 
     /**
