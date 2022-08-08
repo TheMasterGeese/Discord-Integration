@@ -14,14 +14,14 @@ There are two ways to forward messages to discord:
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE.md) for more information.
 
 ## Patch Notes
 
-See `CHANGELOG`
+See [CHANGELOG](CHANGELOG.md)
 ## Contributing
 
-See `CONTRIBUTING`
+See [CONTRIBUTING](CONTRIBUTING.md)
 ## Contact
 
 <b>Discord</b>: Khankar#2236
