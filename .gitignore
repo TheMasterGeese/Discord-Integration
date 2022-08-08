@@ -6,4 +6,5 @@ node_modules/
 dist/
 dist/**/*
 tests/TestEnvironment.ts
+.github/workflows/playwright.yml
 
