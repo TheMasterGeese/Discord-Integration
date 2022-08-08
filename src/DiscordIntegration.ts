@@ -139,7 +139,7 @@ Hooks.on("sendDiscordMessage", function (message: string) {
  */
 async function sendDiscordMessage(message: string) {
 
-    let sendMessage: boolean = true;
+    let sendMessage = true;
 
     const discordWebhook = game.settings.get('discord-integration', 'discordWebhook') as string;
     if (!discordWebhook) {

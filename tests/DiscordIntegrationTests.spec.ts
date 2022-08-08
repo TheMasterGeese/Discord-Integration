@@ -10,7 +10,8 @@ let player_uid: string;
 let webhook: string;
 
 const SEND_DISCORD_MESSAGE_HOOK_SUCCESS = "Send Discord Message Hook successfully caught."
-const EXPECTED_WEBHOOK = TestEnvironment.DISCORD_WEBHOOK;
+const EXPECTED_WEBHOOK = "testWebhook";
+const FUNCTIONAL_WEBHOOK = TestEnvironment.DISCORD_WEBHOOK;
 const EXPECTED_GM_DISCORD_ID = TestEnvironment.GM_DISCORD_ID;
 const EXPECTED_PLAYER_DISCORD_ID = TestEnvironment.PLAYER_DISCORD_ID;
 
@@ -217,6 +218,15 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should send message to Discord', () => {
+        test.beforeAll(async ({ browser }) => {
+            const page = await browser.newPage();
+            await logOnAsUser(1, page);
+    
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
+            page.close();
+        })
         test('when message has @Discord tag', async ({ page }) => {
             await sendMessageCatchRequest(
                 " Hello World",
@@ -259,6 +269,16 @@ test.describe('discord-integration', () => {
             ]);
             await page.unroute(webhook);
         }
+
+        test.afterAll(async ({ browser }) => {
+            const page = await browser.newPage();
+            await logOnAsUser(1, page);
+    
+            // Change the webhook
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+            page.close();
+        })
     });
 
     test.describe('should NOT send message to Discord', async () => {
@@ -280,15 +300,21 @@ test.describe('discord-integration', () => {
                 fillInput(CHAT_TEXT_AREA, '@Gamemaster Hello World', page),
                 page.waitForSelector(NO_DISCORD_WEBHOOK_NOTIFICATION_EN)
             ]);
+            await openModuleSettings(page);
+            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
         });
 
         // TODO Figure out how to test later:   
             // a message that can't stringify into JSON?
     });
+    
     // TODO: How will we handle using a discord server for this test? Just have one up all the time?
     test.describe('should handle discord response', async () => {
         test.skip('when the response comes back successfully', async ({ page }) => {
-
+            await Promise.all([
+                fillInput(CHAT_TEXT_AREA, '@Gamemaster Hello World', page),
+                page.waitForSelector(NO_DISCORD_WEBHOOK_NOTIFICATION_EN)
+            ]);
         });
         test.skip('when the response returns an error', async ({ page }) => {
         // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
