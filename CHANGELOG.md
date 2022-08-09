@@ -1,7 +1,7 @@
 # Discord Integration
 
 ##  2.1.4
-- Can no longer Discord IDs that are neither empty nor an 18-digit number.
+- Can no longer submit Discord IDs that are neither empty nor an 18-digit number.
 - Displays an error notification when sending a message while no Discord Webhook is set.
 - Displays an error notification when sending a message that pings a user with no Discord ID set.
 - Fixed listed compatible and minimum FoundryVTT versions.
