@@ -1,5 +1,7 @@
 # Discord Integration
 
+##  2.1.5
+- Fixed incorrect links in module.json
 ##  2.1.4
 - Can no longer submit Discord IDs that are neither empty nor an 18-digit number.
 - Displays an error notification when sending a message while no Discord Webhook is set.
