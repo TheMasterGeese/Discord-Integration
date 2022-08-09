@@ -86,7 +86,7 @@ test.describe('discord-integration', () => {
         test('when player is GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.GAMEMASTER, gm_uid, EXPECTED_GM_DISCORD_ID, page);
         });
-
+        
         test('when player is NOT GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.PLAYER, player_uid, EXPECTED_PLAYER_DISCORD_ID, page);
         });
@@ -151,11 +151,13 @@ test.describe('discord-integration', () => {
 
     test.describe('should NOT update user flags when closing user config', () => {
         test('when discord-id-config input has no value', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             await testInvalidInput('', page);
 
         });
 
         test('when discord-id-config input is not an 18-digit number', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             await testInvalidInput('not an 18-digit nu', page);
             await testInvalidInput('12345678912345678', page);
             await testInvalidInput('1234567891234567891', page);

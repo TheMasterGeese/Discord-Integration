@@ -10,7 +10,7 @@
     "@playwright/test": "^1.24.0",
     "@types/fs-extra": "^9.0.13",
     "@types/gulp": "^4.0.9",
-    "@typescript-eslint/eslint-plugin": "^5.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.17.0",
     "@typhonjs-fvtt/eslint-config-foundry.js": "^0.8.0",
     "cb": "^0.1.0",
