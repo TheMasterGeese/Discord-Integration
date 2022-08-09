@@ -1,6 +1,6 @@
 import { test, expect, Page, Response, ConsoleMessage, Route } from '@playwright/test';
 import { TestEnvironment } from "./TestEnvironment"
-// TODO: Localization tests?
+// TODO MasterGeeseLivingWorldTools#31: Localization tests?
 import en from "../lang/en.json";
 
 /**
@@ -45,7 +45,7 @@ const FUNCTIONAL_WEBHOOK = TestEnvironment.DISCORD_WEBHOOK;
 test.describe('discord-integration', () => {
 
     test('should register settings on init', async ({ page }) => {
-        // TODO: Optimize to avoid the need to log on after every single test.
+        // TODO MasterGeeseLivingWorldTools#32: Optimize to avoid the need to log on after every single test.
         await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
         // Click the settings icon in the sidemenu
         await openModuleSettings(page);
@@ -143,10 +143,6 @@ test.describe('discord-integration', () => {
             await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(expectedDiscordId);
 
         }
-
-        // TODO: Add unit tests to check for the following cases:
-        // case where the user was not found
-        // case where the discord-id-config element was not found
     });
 
     test.describe('should NOT update user flags when closing user config', () => {
@@ -180,6 +176,10 @@ test.describe('discord-integration', () => {
             await openUserConfiguration(gm_uid, page)
             await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(EXPECTED_GM_DISCORD_ID);
         }
+
+        // TODO discord-integration#33: Add unit tests to check for the following cases:
+        // case where the user was not found
+        // case where the discord-id-config element was not found
     });
 
     test.describe('should handle new chat messages', () => {
@@ -234,8 +234,7 @@ test.describe('discord-integration', () => {
                 })
             ]);
         }
-        // TODO: Add unit tests to check for the following cases:
-        // case where there are no users
+        
     });
 
     test.describe('should NOT handle new chat message', () => {
@@ -273,6 +272,9 @@ test.describe('discord-integration', () => {
                 })
             ]);
         }
+
+        // TODO discord-integration#33: Add unit tests to check for the following cases:
+        // case where there are no users
     });
 
     test.describe('should send message to Discord', () => {
@@ -384,11 +386,11 @@ test.describe('discord-integration', () => {
             await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
         });
 
-        // TODO Figure out how to test later:   
+        // TODO discord-integration#33: Figure out how to test later:   
             // a message that can't stringify into JSON?
     });
 
-    // TODO: How will we handle using a discord server for other contributing developers? Just have one up and running for public use?
+    // TODO MasterGeeseLivingWorldTools#34: How will we handle using a discord server for other contributing developers? Just have one up and running for public use?
     test.describe('should handle discord response', async () => {
         // Change the discord webhook to an actual functional webhook.
         test.beforeAll(async ({ browser }) => {
@@ -453,7 +455,7 @@ test.describe('discord-integration', () => {
             page.close();
         })
 
-        // TODO: Figure out how to test for the following cases:
+        // TODO discord-integration#33: Figure out how to test for the following cases:
             // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
             // when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
     });

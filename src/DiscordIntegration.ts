@@ -1,4 +1,4 @@
-// Thrown on Hooks.on(), cause and fix unknown
+// TODO discord-integration#34: Thrown on Hooks.on(), cause and fix unknown
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 let gameUsers: StoredDocument<User>[]
@@ -119,7 +119,7 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     if (shouldSendMessage) {
         Hooks.callAll("sendDiscordMessage", message);
     } else {
-        // TODO: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
+        // TODO discord-integration#35: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
         console.log("Message not sent.")
     }
 });
