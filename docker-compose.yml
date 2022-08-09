@@ -1,0 +1,21 @@
+---
+version: "3.8"
+
+services:
+  foundry:
+    image: felddy/foundryvtt:release
+    hostname: my_foundry_host
+    init: true
+    volumes:
+      - type: bind
+        source: ${LOCAL_DATA}
+        target: /data
+    environment:
+      - FOUNDRY_PASSWORD=${FOUNDRY_PASS}
+      - FOUNDRY_USERNAME=${FOUNDRY_LOGIN}
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN}
+      - FOUNDRY_WORLD=testWorld
+    ports:
+      - target: 30000
+        published: 30000
+        protocol: tcp
