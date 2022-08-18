@@ -1,5 +1,6 @@
 # Discord Integration
-
+##  2.1.6
+- Fixed module.json not linking to raw content
 ##  2.1.5
 - Fixed incorrect links in module.json
 ##  2.1.4

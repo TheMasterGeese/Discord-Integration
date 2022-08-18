@@ -52,6 +52,8 @@ function reloadPackage(callback) { PACKAGE = JSON.parse(fs.readFileSync('package
  * @returns The generated filepath.
  */
 function DEV_DIST() { return path.join(process.env.LOCAL_DEV_DIR, PACKAGE.name + '/'); }
+
+const DOCKER_CONTAINER = process.env.DOCKER_CONTAINER;
 /**
  * Wrapper for del to allow it to be considered a gulp task.
  * 
@@ -191,7 +193,7 @@ function test() {
 		// Wait for the state of the docker container to be "healthy". Waiting for the container startup isn't enough, it takes 
 		// roughly 1 more minute after the container is started for FoundryVTT to be ready, indicated by the "healthy" status.
 		do {
-			({ stdout, stderr } = await exec('docker inspect --format="{{json .State.Health.Status}}" discord-integration-foundry-1'));
+			({ stdout, stderr } = await exec(`docker inspect --format="{{json .State.Health.Status}}" ${DOCKER_CONTAINER}`));
 		} while (stdout !== '"healthy"\n');
 		// run tests
 		({ stdout, stderr } = await exec(`npx playwright test`));

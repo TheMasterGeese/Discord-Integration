@@ -211,7 +211,6 @@ async function sendDiscordMessage(message: string) {
                     sendMessage = false;
                     return;
                 }
-                console.log(message);
                 message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`);
                 message = message.replace(`@${usersToChars.get(userName)}`, `<@${currentUserDiscordID}>`);
             }

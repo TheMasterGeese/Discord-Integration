@@ -1,4 +1,5 @@
-import { test, expect, Page, Response, ConsoleMessage, Route } from "@playwright/test";
+import { test, expect, Page, ConsoleMessage, Route } from '@playwright/test';
+import { Response as PwResponse } from '@playwright/test';
 import { TestEnvironment } from "./TestEnvironment"
 // TODO MasterGeeseLivingWorldTools#31: Localization tests?
 import en from "../lang/en.json";
@@ -24,6 +25,7 @@ let webhook: string;
  const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
  const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
  const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
+ 
  const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
  const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
  const CHAT_TEXT_AREA = '#chat-message';
@@ -96,7 +98,7 @@ test.describe('discord-integration', () => {
         test('when player is GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.GAMEMASTER, gm_uid, EXPECTED_GM_DISCORD_ID, page);
         });
-        
+
         test('when player is NOT GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.PLAYER, player_uid, EXPECTED_PLAYER_DISCORD_ID, page);
         });
@@ -198,7 +200,7 @@ test.describe('discord-integration', () => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
             // attach a listener to the sendDiscordMessage hook to signal test completion.
-            await page.evaluate(async () => {
+            await page.evaluate(() => {
                 Hooks.once("sendDiscordMessage", () => {
                     console.log("Send Discord Message Hook successfully caught.")
                 });
@@ -244,18 +246,18 @@ test.describe('discord-integration', () => {
                 })
             ]);
         }
-        
+
     });
 
     test.describe('should NOT handle new chat message', () => {
         test('when there are no tags in the message', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-            await enterChatMessageAndAwaitLog('test', page);          
+            await enterChatMessageAndAwaitLog('test', page);
         });
 
         test('when there is a tag in the message but not for a user', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-            await enterChatMessageAndAwaitLog('@NotAUser test', page);   
+            await enterChatMessageAndAwaitLog('@NotAUser test', page);
         });
 
         /**
@@ -292,7 +294,7 @@ test.describe('discord-integration', () => {
         test.beforeAll(async ({ browser }) => {
             const page = await browser.newPage();
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-    
+
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
             await page.close();
@@ -307,9 +309,8 @@ test.describe('discord-integration', () => {
 
         test('when message has user tags', async ({ page }) => {
             await sendMessageCatchRequest(
-                `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`, 
+                `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`,
                 '@Gamemaster @Player Hello World',
-                
                 page);
         });
 
@@ -321,15 +322,14 @@ test.describe('discord-integration', () => {
          * @param chatMessage The message to send in chat.
          * @param page The test's page fixture.
          */
-        async function sendMessageCatchRequest(expectedMessage : string, chatMessage : string, page : Page) {
+        async function sendMessageCatchRequest(expectedMessage: string, chatMessage: string, page: Page) {
             // Expected values
             const success = 'Message sending test passed!'
             const responseCode = 200;
-            const message = {"content": expectedMessage};
+            const message = { "content": expectedMessage };
 
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
-
             await page.route(webhook, async (route : Route) => {
                 const request = route.request();
                 expect(request.method()).toMatch('POST');
@@ -340,10 +340,10 @@ test.describe('discord-integration', () => {
                     status: responseCode,
                     body: success
                 })
-                return;
             });
             // Send the message, and expect a response indicating the request was correctly formatted.
-            await Promise.all([       
+            await Promise.all([
+                fillInput(CHAT_TEXT_AREA, chatMessage, page),
                 page.waitForResponse(async (response : Response) => {
                     const responseText = await response.text();
                     return new Promise<boolean>((resolve) => {
@@ -351,7 +351,6 @@ test.describe('discord-integration', () => {
                             && responseText === success);
                     });
                 }),
-                fillInput(CHAT_TEXT_AREA, chatMessage, page)
             ]);
             // Clean up the routing
             await page.unroute(webhook);
@@ -361,14 +360,14 @@ test.describe('discord-integration', () => {
         test.afterAll(async ({ browser }) => {
             const page = await browser.newPage();
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-    
+
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
-            page.close();
+            await page.close();
         })
     });
 
-    test.describe('should NOT send message to Discord', async () => {
+    test.describe('should NOT send message to Discord', () => {
         test('when a user pinged by the message does not have a discordId set', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
@@ -399,19 +398,19 @@ test.describe('discord-integration', () => {
         });
 
         // TODO discord-integration#33: Figure out how to test later:   
-            // a message that can't stringify into JSON?
+        // a message that can't stringify into JSON?
     });
 
     // TODO MasterGeeseLivingWorldTools#34: How will we handle using a discord server for other contributing developers? Just have one up and running for public use?
-    test.describe('should handle discord response', async () => {
+    test.describe('should handle discord response', () => {
         // Change the discord webhook to an actual functional webhook.
         test.beforeAll(async ({ browser }) => {
             const page = await browser.newPage();
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-    
+
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
-            page.close();
+            await page.close();
         })
 
         test('when the response comes back successfully', async ({ page }) => {
@@ -422,7 +421,7 @@ test.describe('discord-integration', () => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             // Send a message, expecting Discord to respond.
             await Promise.all([
-                page.waitForResponse((response : Response) => {
+                page.waitForResponse((response: PwResponse) => {
                     return new Promise<boolean>((resolve) => {
                         resolve(response.status() === responseCode);
                     });
@@ -434,7 +433,7 @@ test.describe('discord-integration', () => {
             const responseCode = 404;
 
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-    
+
             // Change the webhook to the invalid value.
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
@@ -443,7 +442,7 @@ test.describe('discord-integration', () => {
             // indicating as such.
             await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             await Promise.all([
-                page.waitForResponse((response : Response) => {
+                page.waitForResponse((response: PwResponse) => {
                     return new Promise<boolean>((resolve) => {
                         resolve(response.status() === responseCode);
                     });
@@ -460,16 +459,16 @@ test.describe('discord-integration', () => {
         test.afterAll(async ({ browser }) => {
             const page = await browser.newPage();
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-    
+
             // Change the webhook
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
-            page.close();
+            await page.close();
         })
 
         // TODO discord-integration#33: Figure out how to test for the following cases:
-            // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
-            // when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
+        // when the user posting the message has a discordId that is valid but does not link to an actual discord user?
+        // when the user posting the message has a discordId that is valid but does not link to an actual discord user in the server the webhook belongs to?
     });
 
     /**
@@ -497,11 +496,12 @@ test.describe('discord-integration', () => {
         // Join the game
         await Promise.all([
             page.locator('button:has-text("Join Game Session")').click({ force: true }),
-            // TODO: Find a more graceful way to cast window to a type
-            page.waitForFunction(() => (window as any).game?.ready)
+            // TODO discord-integration#37: Find a way to make eslint happy about this type
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            page.waitForFunction(() => (window as any).game?.ready as boolean)
         ]);
         // Get the current webhook setting's value.
-        webhook = await page.evaluate(() => { return game.settings.get('discord-integration', 'discordWebhook' ) }) as string;
+        webhook = await page.evaluate(() => { return game.settings.get('discord-integration', 'discordWebhook') }) as string;
     }
 
     /**
@@ -601,8 +601,7 @@ test.describe('discord-integration', () => {
 /**
  * Indicates what index each user will be in at the login screen's user selection field.
  */
-enum PLAYER_INDEX
-{
+enum PLAYER_INDEX {
     GAMEMASTER = 1,
     NO_ID = 2,
     PLAYER = 3,
