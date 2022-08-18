@@ -36,7 +36,6 @@ Hooks.once("init", function () {
         config: true,
         default: true,
         type: Boolean
-        
     });
     // add settings option for pinging by user name
     foundryGame.settings.register("discord-integration", "pingByUserName", {
@@ -53,7 +52,7 @@ Hooks.once("init", function () {
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object).data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -127,9 +126,11 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
 
-    foundryGame.users.forEach(user => {
-        discordTags.push(`@${user.name}`)
-        if (user.character) {
+    gameUsers.forEach((user : User) => {
+        if (game.settings.get('discord-integration', 'pingByUserName')) {
+            discordTags.push(`@${user.name}`)
+        }
+        if (game.settings.get('discord-integration', 'pingByCharacterName') && user.character) {
             discordTags.push(`@${(user.character as ActorData).name}`)
         }
     })

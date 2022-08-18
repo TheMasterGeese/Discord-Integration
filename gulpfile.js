@@ -196,13 +196,16 @@ function test() {
 			({ stdout, stderr } = await exec(`docker inspect --format="{{json .State.Health.Status}}" ${DOCKER_CONTAINER}`));
 		} while (stdout !== '"healthy"\n');
 		// run tests
-		({ stdout, stderr } = await exec(`npx playwright test`));
-		console.log(stdout);
-		console.log(stderr);
-		// tear down docker container
-		({ stdout, stderr } = await exec(`docker-compose down`));
-		console.log(stdout);
-		console.log(stderr);
+		try {
+			({ stdout, stderr } = await exec(`npx playwright test`));
+			console.log(stdout);
+			console.log(stderr);
+		} finally {
+			// tear down docker container
+			({ stdout, stderr } = await exec(`docker-compose down`));
+			console.log(stdout);
+			console.log(stderr);
+		}
 	}
 }
 exports.test = test();
@@ -237,7 +240,6 @@ exports.cleanAll = cleanAll();
 exports.default = gulp.series(
 	lint()
 	, dev()
-	, outputTestWorld()
 	, test()
 	, gulp.parallel(
 		buildSource(true, false)
@@ -266,6 +268,7 @@ function dev() {
 			, outputStylesCSS(DEV_DIST())
 			, outputSounds(DEV_DIST())
 			, outputMetaFiles(DEV_DIST())
+			, outputTestWorld(DEV_DIST())
 		)
 	);
 }

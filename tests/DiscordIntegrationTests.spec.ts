@@ -70,13 +70,13 @@ test.describe('discord-integration', () => {
             await openModuleSettings(page);
             await fillModuleSettingsThenClose(newWebhook, false, false, page);
 
-            // Verify the webhook was changed
+            // Verify the settings was changed
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(newWebhook);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).not.toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
 
-            // Revert the value of webhook to the default value.
+            // Revert the value of settings to the default values.
             await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
@@ -91,6 +91,8 @@ test.describe('discord-integration', () => {
             await openModuleSettings(page);
             // Expect the field to not exist
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).toHaveCount(0);
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toHaveCount(0);
         });
     });
 
@@ -219,6 +221,22 @@ test.describe('discord-integration', () => {
             await enterChatMessageAndAwaitSend('@Gamemaster @Player test', page);
         });
 
+        test('when there is a tag in the message for a character', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@spamton test', page);
+        });
+
+        test('when there are two tags in the message: one for a character', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', page);
+        });
+
+        test('when there are two tags in the message: both for characters', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Fate @spamton test', page);
+        });
+
+        test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', page);
+        });
+
         test('when there is a @Discord tag in the message', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Discord test', page);
         });
@@ -230,7 +248,7 @@ test.describe('discord-integration', () => {
          * @param page The test's page fixture.
          */
         async function enterChatMessageAndAwaitSend(message: string, page: Page) {
-
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Fill the chat's text area with the message.
             await page.locator(CHAT_TEXT_AREA).focus();
             await page.locator(CHAT_TEXT_AREA).fill(message);
@@ -260,6 +278,24 @@ test.describe('discord-integration', () => {
             await enterChatMessageAndAwaitLog('@NotAUser test', page);
         });
 
+        test('when there is a tag in the message for a user but the "Ping by User Name" setting is disabled.', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, false, page);
+            await enterChatMessageAndAwaitLog('@Gamemaster test', page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, true, page);
+        });
+
+        test('when there is a tag in the message for a character but the "Ping by Character Name" setting is disabled.', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, false, page);
+            await enterChatMessageAndAwaitLog('@spamton test', page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, true, page);
+        });
+        
         /**
          * Helper function to enter a chat message and await the console message indicating that the sendDiscordMessage hook was NOT hit.
          *  
@@ -268,6 +304,7 @@ test.describe('discord-integration', () => {
          */
         async function enterChatMessageAndAwaitLog(message: string, page: Page) {
 
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Fill the chat's text area with the message.
             await page.locator(CHAT_TEXT_AREA).focus();
             await page.locator(CHAT_TEXT_AREA).fill(message);
@@ -565,10 +602,10 @@ test.describe('discord-integration', () => {
      * @param page The test's page fixture.
      */
     async function fillModuleSettingsThenClose(newWebhook: string, pingByUserName: boolean, pingByCharacterName: boolean, page : Page) {
-        const pingByUserNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
-        const pingByCharNameCheckbox = page.locator(PING_BY_CHARACTER_NAME_INPUT);
-        pingByUserName ? await pingByUserNameCheckbox.check() : await pingByUserNameCheckbox.uncheck();
-        pingByCharacterName ? await pingByCharNameCheckbox.check() : await pingByCharNameCheckbox.uncheck();
+        const userNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
+        pingByUserName ? await userNameCheckbox.check() : await userNameCheckbox.uncheck();
+        const characterNameCheckbox = page.locator(PING_BY_CHARACTER_NAME_INPUT);
+        pingByCharacterName ? await characterNameCheckbox.check() : await characterNameCheckbox.uncheck();
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
         await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }
@@ -596,6 +633,20 @@ test.describe('discord-integration', () => {
         await page.locator(inputElement).fill(newValue);
         await page.locator(inputElement).press('Enter');
     }
+
+    /**
+     * Fills a checkbox with a specific value.
+     * 
+     * @param inputElement Selector for the checkbox element to toggle
+     * @param checkOrUncheck true if checking the box, false if unchecking it.
+     * @param page The test's page fixture.
+     */
+     async function fillCheckboxThenClose(inputElement: string, checkOrUncheck: boolean, page: Page) {
+        const checkbox = page.locator(inputElement);
+        checkOrUncheck ? await checkbox.check() : await checkbox.uncheck();
+        await checkbox.press('Enter');
+    }
+
 });
 
 /**
