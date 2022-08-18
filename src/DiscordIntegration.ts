@@ -1,6 +1,8 @@
 // TODO discord-integration#34: Thrown on Hooks.on(), cause and fix unknown
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
+import { ActorData } from "@league-of-foundry-developers/foundry-vtt-types/src/foundry/common/data/data.mjs/actorData";
+
 let gameUsers: StoredDocument<User>[]
 let foundryGame: Game;
 
@@ -26,13 +28,31 @@ Hooks.once("init", function () {
         type: String,
         default: "",
     });
+    // add settings option for pinging by on character name
+    foundryGame.settings.register("discord-integration", "pingByCharacterName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByCharacterName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByCharacterNameHint"),
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
+    // add settings option for pinging by user name
+    foundryGame.settings.register("discord-integration", "pingByUserName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByUserName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByUserNameHint"),
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
 });
 
 // add in the extra field for DiscordID
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object).data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -105,8 +125,14 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
 Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
-    foundryGame.users.forEach(user => {
-        discordTags.push(`@${user.name}`)
+
+    gameUsers.forEach((user : User) => {
+        if (game.settings.get('discord-integration', 'pingByUserName')) {
+            discordTags.push(`@${user.name}`)
+        }
+        if (game.settings.get('discord-integration', 'pingByCharacterName') && user.character) {
+            discordTags.push(`@${(user.character as ActorData).name}`)
+        }
     })
 
     let shouldSendMessage = false;
@@ -149,15 +175,26 @@ async function sendDiscordMessage(message: string) {
         return;
     }
 
-    // search for any @<username> strings in the message
-    const userNames: string[] = gameUsers.map((user: User) => { return user.name }); // get a list of usernames
+    const usersToChars: Map<string, string> = new Map<string, string>();
+
     const usersToPing: string[] = [];
-    userNames.forEach((userName: string) => {
-        if (message.indexOf(`@${userName}`) !== -1) {
-            usersToPing.push(userName);
+
+    gameUsers.forEach((user: User) => {
+        if (message.indexOf(`@${user.name}`) !== -1) {
+            usersToPing.push(user.name);
+        }
+        if (user.character) {
+            usersToChars.set(user.name, ((user.character as ActorData).name));
         }
     })
 
+    usersToChars.forEach((charName : string, userName : string, _map) => {
+        // Ping if a user or their character's name is tagged
+        if (message.indexOf(`@${charName}`) !== -1) {
+            usersToPing.push(userName);
+        } 
+    })
+    
     // search for @Discord in the message
     const shouldPingDiscord: boolean = (message.search(`@Discord`) !== -1);
 
@@ -175,7 +212,8 @@ async function sendDiscordMessage(message: string) {
                     sendMessage = false;
                     return;
                 }
-                message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`)
+                message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`);
+                message = message.replace(`@${usersToChars.get(userName)}`, `<@${currentUserDiscordID}>`);
             }
         })
         // else if Discord as a whole is being pinged, remove the "@Discord" part and then send the message.

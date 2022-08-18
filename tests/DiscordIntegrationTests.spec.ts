@@ -1,6 +1,6 @@
 import { test, expect, Page, ConsoleMessage, Route } from '@playwright/test';
 import { Response as PwResponse } from '@playwright/test';
-import { TestEnvironment } from './TestEnvironment';
+import { TestEnvironment } from "./TestEnvironment"
 // TODO MasterGeeseLivingWorldTools#31: Localization tests?
 import en from "../lang/en.json";
 
@@ -20,16 +20,19 @@ let webhook: string;
 /**
  * Element selectors
  */
-const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
-const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
-const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
-const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
-const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
-const CHAT_TEXT_AREA = '#chat-message';
-const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
-const GM_NO_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} NoId ${en['DISCORDINTEGRATION.UserHasNoIdError']}")`;
-const NO_DISCORD_WEBHOOK_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} ${en['DISCORDINTEGRATION.NoDiscordWebhookError']}")`;
-
+ const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
+ const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
+ const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
+ const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
+ const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
+ 
+ const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
+ const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
+ const CHAT_TEXT_AREA = '#chat-message';
+ const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
+ const GM_NO_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} NoId ${en['DISCORDINTEGRATION.UserHasNoIdError']}")`;
+ const NO_DISCORD_WEBHOOK_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} ${en['DISCORDINTEGRATION.NoDiscordWebhookError']}")`;
+ 
 /**
  * Expected Values
  */
@@ -53,36 +56,46 @@ test.describe('discord-integration', () => {
 
         // make sure the Discord Webhook field is filled out with the expected value.
         await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
+        // make sure the Enable Ping by Character Name and User name checkboxes are filled out.
+        await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
+        await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
     });
 
-    test.describe('should update discord webhook in settings', () => {
+    test.describe('should update module settings', () => {
         test('when player is GM', async ({ page }) => {
             const newWebhook = '123456789123456789';
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
             // Change the webhook
             await openModuleSettings(page);
-            await fillDiscordWebhookThenClose(newWebhook, page);
+            await fillModuleSettingsThenClose(newWebhook, false, false, page);
 
-            // Verify the webhook was changed
+            // Verify the settings was changed
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(newWebhook);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).not.toBeChecked();
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
 
-            // Revert the value of webhook to the default value.
-            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+            // Revert the value of settings to the default values.
+            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
         });
     });
-    test.describe('should NOT update discord webhook in settings', () => {
+    test.describe('should NOT update module settings', () => {
         test('when player is NOT GM', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.PLAYER, page);
             // Change the webhook
             await openModuleSettings(page);
             // Expect the field to not exist
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).toHaveCount(0);
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toHaveCount(0);
         });
     });
+
     test.describe('should add inputFields below Player Color group', () => {
         test('when player is GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.GAMEMASTER, gm_uid, EXPECTED_GM_DISCORD_ID, page);
@@ -208,6 +221,22 @@ test.describe('discord-integration', () => {
             await enterChatMessageAndAwaitSend('@Gamemaster @Player test', page);
         });
 
+        test('when there is a tag in the message for a character', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@spamton test', page);
+        });
+
+        test('when there are two tags in the message: one for a character', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', page);
+        });
+
+        test('when there are two tags in the message: both for characters', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Fate @spamton test', page);
+        });
+
+        test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
+            await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', page);
+        });
+
         test('when there is a @Discord tag in the message', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Discord test', page);
         });
@@ -219,7 +248,7 @@ test.describe('discord-integration', () => {
          * @param page The test's page fixture.
          */
         async function enterChatMessageAndAwaitSend(message: string, page: Page) {
-
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Fill the chat's text area with the message.
             await page.locator(CHAT_TEXT_AREA).focus();
             await page.locator(CHAT_TEXT_AREA).fill(message);
@@ -249,6 +278,24 @@ test.describe('discord-integration', () => {
             await enterChatMessageAndAwaitLog('@NotAUser test', page);
         });
 
+        test('when there is a tag in the message for a user but the "Ping by User Name" setting is disabled.', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, false, page);
+            await enterChatMessageAndAwaitLog('@Gamemaster test', page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, true, page);
+        });
+
+        test('when there is a tag in the message for a character but the "Ping by Character Name" setting is disabled.', async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, false, page);
+            await enterChatMessageAndAwaitLog('@spamton test', page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, true, page);
+        });
+        
         /**
          * Helper function to enter a chat message and await the console message indicating that the sendDiscordMessage hook was NOT hit.
          *  
@@ -257,6 +304,7 @@ test.describe('discord-integration', () => {
          */
         async function enterChatMessageAndAwaitLog(message: string, page: Page) {
 
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Fill the chat's text area with the message.
             await page.locator(CHAT_TEXT_AREA).focus();
             await page.locator(CHAT_TEXT_AREA).fill(message);
@@ -300,7 +348,6 @@ test.describe('discord-integration', () => {
             await sendMessageCatchRequest(
                 `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`,
                 '@Gamemaster @Player Hello World',
-
                 page);
         });
 
@@ -320,30 +367,27 @@ test.describe('discord-integration', () => {
 
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
-            await page.route(webhook, (route: Route) => {
-                const handler = async () => {
-                    const request = route.request();
-                    expect(request.method()).toMatch('POST');
-                    expect(request.url()).toMatch(webhook);
-                    expect(await request.headerValue('content-type')).toMatch('application/json');
-                    expect(JSON.parse(request.postData())).toEqual(message);
-                    await route.fulfill({
-                        status: responseCode,
-                        body: success
-                    });
-                }
-                void handler();
+            await page.route(webhook, async (route : Route) => {
+                const request = route.request();
+                expect(request.method()).toMatch('POST');
+                expect(request.url()).toMatch(webhook);
+                expect(await request.headerValue('content-type')).toMatch('application/json');
+                expect(JSON.parse(request.postData())).toEqual(message);
+                route.fulfill( {
+                    status: responseCode,
+                    body: success
+                })
             });
             // Send the message, and expect a response indicating the request was correctly formatted.
             await Promise.all([
                 fillInput(CHAT_TEXT_AREA, chatMessage, page),
-                page.waitForResponse(async (response: PwResponse) => {
+                page.waitForResponse(async (response : Response) => {
                     const responseText = await response.text();
                     return new Promise<boolean>((resolve) => {
                         resolve(response.status() === responseCode
                             && responseText === success);
                     });
-                })
+                }),
             ]);
             // Clean up the routing
             await page.unroute(webhook);
@@ -550,6 +594,22 @@ test.describe('discord-integration', () => {
     }
 
     /**
+     * Toggles all the module settings then closes the module settings view. Assumes that as this function is called, you are in the
+     * module settings view.
+     * 
+     * @param newWebhook The new webhook value.
+     * @param pingByUserName
+     * @param page The test's page fixture.
+     */
+    async function fillModuleSettingsThenClose(newWebhook: string, pingByUserName: boolean, pingByCharacterName: boolean, page : Page) {
+        const userNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
+        pingByUserName ? await userNameCheckbox.check() : await userNameCheckbox.uncheck();
+        const characterNameCheckbox = page.locator(PING_BY_CHARACTER_NAME_INPUT);
+        pingByCharacterName ? await characterNameCheckbox.check() : await characterNameCheckbox.uncheck();
+        await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
+        await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
+    }
+    /**
      * Fills the discord id field then closes the user configuraton view. Assumes that as this function is called, you are in the
      * user configuration view.
      * 
@@ -573,6 +633,20 @@ test.describe('discord-integration', () => {
         await page.locator(inputElement).fill(newValue);
         await page.locator(inputElement).press('Enter');
     }
+
+    /**
+     * Fills a checkbox with a specific value.
+     * 
+     * @param inputElement Selector for the checkbox element to toggle
+     * @param checkOrUncheck true if checking the box, false if unchecking it.
+     * @param page The test's page fixture.
+     */
+     async function fillCheckboxThenClose(inputElement: string, checkOrUncheck: boolean, page: Page) {
+        const checkbox = page.locator(inputElement);
+        checkOrUncheck ? await checkbox.check() : await checkbox.uncheck();
+        await checkbox.press('Enter');
+    }
+
 });
 
 /**

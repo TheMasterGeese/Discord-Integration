@@ -1,6 +1,10 @@
 {
    "DISCORDINTEGRATION.SettingsDiscordWebhook" : "Discord Webhook",
    "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the Webhook to send messages through",
+   "DISCORDINTEGRATION.SettingsPingByUserName" : "Ping By User Name",
+   "DISCORDINTEGRATION.SettingsPingByUserNameHint" : "Whether users can be pinged based on their FoundryVTT username.",
+   "DISCORDINTEGRATION.SettingsPingByCharacterName" : "Ping By Character Name",
+   "DISCORDINTEGRATION.SettingsPingByCharacterNameHint" : "Whether users can be pinged based on their character name.",
 
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
