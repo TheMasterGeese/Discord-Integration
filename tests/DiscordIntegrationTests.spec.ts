@@ -1,4 +1,4 @@
-import { test, expect, Page, Response, ConsoleMessage, Route } from '@playwright/test';
+import { test, expect, Page, Response, ConsoleMessage, Route } from "@playwright/test";
 import { TestEnvironment } from "./TestEnvironment"
 // TODO MasterGeeseLivingWorldTools#31: Localization tests?
 import en from "../lang/en.json";
@@ -22,6 +22,8 @@ let webhook: string;
  const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
  const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
  const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
+ const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
+ const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
  const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
  const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
  const CHAT_TEXT_AREA = '#chat-message';
@@ -52,28 +54,35 @@ test.describe('discord-integration', () => {
 
         // make sure the Discord Webhook field is filled out with the expected value.
         await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
+        // make sure the Enable Ping by Character Name and User name checkboxes are filled out.
+        await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
+        await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
     });
 
-    test.describe('should update discord webhook in settings', () => {
+    test.describe('should update module settings', () => {
         test('when player is GM', async ({ page }) => {
             const newWebhook = '123456789123456789';
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
             // Change the webhook
             await openModuleSettings(page);
-            await fillDiscordWebhookThenClose(newWebhook, page);
+            await fillModuleSettingsThenClose(newWebhook, false, false, page);
 
             // Verify the webhook was changed
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(newWebhook);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).not.toBeChecked();
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
 
             // Revert the value of webhook to the default value.
-            await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
+            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
+            await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
+            await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
         });
     });
-    test.describe('should NOT update discord webhook in settings', () => {
+    test.describe('should NOT update module settings', () => {
         test('when player is NOT GM', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.PLAYER, page);
             // Change the webhook
@@ -82,6 +91,7 @@ test.describe('discord-integration', () => {
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
         });
     });
+
     test.describe('should add inputFields below Player Color group', () => {
         test('when player is GM', async ({ page }) => {
             await testInputField(PLAYER_INDEX.GAMEMASTER, gm_uid, EXPECTED_GM_DISCORD_ID, page);
@@ -285,7 +295,7 @@ test.describe('discord-integration', () => {
     
             await openModuleSettings(page);
             await fillDiscordWebhookThenClose(FUNCTIONAL_WEBHOOK, page);
-            page.close();
+            await page.close();
         })
 
         test('when message has @Discord tag', async ({ page }) => {
@@ -319,6 +329,7 @@ test.describe('discord-integration', () => {
 
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
+
             await page.route(webhook, async (route : Route) => {
                 const request = route.request();
                 expect(request.method()).toMatch('POST');
@@ -329,17 +340,18 @@ test.describe('discord-integration', () => {
                     status: responseCode,
                     body: success
                 })
+                return;
             });
             // Send the message, and expect a response indicating the request was correctly formatted.
-            await Promise.all([
-                fillInput(CHAT_TEXT_AREA, chatMessage, page),
+            await Promise.all([       
                 page.waitForResponse(async (response : Response) => {
                     const responseText = await response.text();
                     return new Promise<boolean>((resolve) => {
                         resolve(response.status() === responseCode
                             && responseText === success);
                     });
-                })
+                }),
+                fillInput(CHAT_TEXT_AREA, chatMessage, page)
             ]);
             // Clean up the routing
             await page.unroute(webhook);
@@ -544,6 +556,22 @@ test.describe('discord-integration', () => {
         await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }
 
+    /**
+     * Toggles all the module settings then closes the module settings view. Assumes that as this function is called, you are in the
+     * module settings view.
+     * 
+     * @param newWebhook The new webhook value.
+     * @param pingByUserName
+     * @param page The test's page fixture.
+     */
+    async function fillModuleSettingsThenClose(newWebhook: string, pingByUserName: boolean, pingByCharacterName: boolean, page : Page) {
+        const pingByUserNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
+        const pingByCharNameCheckbox = page.locator(PING_BY_CHARACTER_NAME_INPUT);
+        pingByUserName ? await pingByUserNameCheckbox.check() : await pingByUserNameCheckbox.uncheck();
+        pingByCharacterName ? await pingByCharNameCheckbox.check() : await pingByCharNameCheckbox.uncheck();
+        await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
+        await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
+    }
     /**
      * Fills the discord id field then closes the user configuraton view. Assumes that as this function is called, you are in the
      * user configuration view.

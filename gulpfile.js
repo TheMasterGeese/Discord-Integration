@@ -9,7 +9,6 @@ const path = require('path');
 const rename = require('gulp-rename');
 const sm = require('gulp-sourcemaps');
 const stringify = require('json-stringify-pretty-compact');
-const tabify = require('gulp-tabify')
 const ts = require('gulp-typescript');
 const util = require('util');
 const zip = require('gulp-zip');
@@ -91,7 +90,6 @@ function buildSource(keepSources, minifySources = false, output = null) {
 			mangle: false,
 			noSource: true
 		}));
-		else stream = stream.pipe(tabify(4, false));
 		return stream.pipe(gulp.dest((output || DIST) + SOURCE));
 	}
 }
@@ -133,7 +131,7 @@ function outputTemplates(output = null) { return () => gulp.src(TEMPLATES + GLOB
 function outputStylesCSS(output = null) { return () => gulp.src(CSS + GLOB).pipe(gulp.dest((output || DIST) + CSS)); }
 function outputSounds(output = null) { return () => gulp.src(SOUNDS + GLOB).pipe(gulp.dest((output || DIST) + SOUNDS)); }
 function outputMetaFiles(output = null) { return () => gulp.src(['LICENSE', 'README.md', 'CHANGELOG.md']).pipe(gulp.dest((output || DIST))); }
-function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "\\" + DATA + WORLDS))); }
+function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "/" + DATA + WORLDS))); }
 
 /**
  * Copy files to module named directory and then compress that folder into a zip
