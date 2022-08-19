@@ -21,7 +21,7 @@ Allows messaging from FoundryVTT to Discord through webhooks.
 [![MIT License][license-shield]][license-url]
 
 ### Table of Contents
-- [Getting Started](#Getting Started)
+- [Getting Started](#Getting-Started)
 - [Usage](#Usage)
 - [Changelog](#Changelog)
 - [Contributing](#Contributing)
