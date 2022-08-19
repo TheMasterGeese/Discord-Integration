@@ -49,8 +49,7 @@ See [CONTRIBUTING](CONTRIBUTING.md)
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LICENSE.md) for more information.
-
+This work is licensed under the [Foundry Virtual Tabletop EULA - Limited License Agreement for Module Development](https://foundryvtt.com/article/license/) and [MIT License](LICENSE).
 ## Contact
 
 <b>Discord</b>: Khankar#2236
