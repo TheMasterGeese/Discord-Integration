@@ -20,19 +20,23 @@ let webhook: string;
 /**
  * Element selectors
  */
- const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
- const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
- const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
- const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
- const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
- 
- const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
- const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
- const CHAT_TEXT_AREA = '#chat-message';
- const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
- const GM_NO_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} NoId ${en['DISCORDINTEGRATION.UserHasNoIdError']}")`;
- const NO_DISCORD_WEBHOOK_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} ${en['DISCORDINTEGRATION.NoDiscordWebhookError']}")`;
- 
+/**
+ * Settings Menu
+ */
+const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
+const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
+const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
+const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
+const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
+const FORWARD_ALL_MESSAGES_INPUT = ' input[name="discord-integration.forwardAllMessages"]';
+
+const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
+const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
+const CHAT_TEXT_AREA = '#chat-message';
+const INVALID_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.InvalidIdError']}")`;
+const GM_NO_DISCORD_ID_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} NoId ${en['DISCORDINTEGRATION.UserHasNoIdError']}")`;
+const NO_DISCORD_WEBHOOK_NOTIFICATION_EN = `#notifications > li.notification.error:has-text("${en['DISCORDINTEGRATION.CouldNotSendMessage']} ${en['DISCORDINTEGRATION.NoDiscordWebhookError']}")`;
+
 /**
  * Expected Values
  */
@@ -59,6 +63,7 @@ test.describe('discord-integration', () => {
         // make sure the Enable Ping by Character Name and User name checkboxes are filled out.
         await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
         await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
+        await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
     });
 
     test.describe('should update module settings', () => {
@@ -68,20 +73,22 @@ test.describe('discord-integration', () => {
 
             // Change the webhook
             await openModuleSettings(page);
-            await fillModuleSettingsThenClose(newWebhook, false, false, page);
+            await fillModuleSettingsThenClose(newWebhook, false, false, true, page);
 
             // Verify the settings was changed
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(newWebhook);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).not.toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
+            await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toBeChecked();
 
             // Revert the value of settings to the default values.
-            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, page);
+            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
+            await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
         });
     });
     test.describe('should NOT update module settings', () => {
@@ -93,6 +100,7 @@ test.describe('discord-integration', () => {
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveCount(0);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).toHaveCount(0);
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toHaveCount(0);
+            await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toHaveCount(0);
         });
     });
 
@@ -210,44 +218,53 @@ test.describe('discord-integration', () => {
         });
 
         test('when there is a tag in the message for a user', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster test', page);
+            await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
         });
 
         test('when there is are two tags in the message: one for a user', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', page);
+            await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
         });
 
         test('when there is are two tags in the message: both for users', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @Player test', page);
+            await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
         });
 
         test('when there is a tag in the message for a character', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@spamton test', page);
+            await enterChatMessageAndAwaitSend('@spamton test', false, page);
         });
 
         test('when there are two tags in the message: one for a character', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', page);
+            await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', false, page);
         });
 
         test('when there are two tags in the message: both for characters', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Fate @spamton test', page);
+            await enterChatMessageAndAwaitSend('@Fate @spamton test', false, page);
         });
 
         test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', page);
+            await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', false, page);
         });
 
         test('when there is a @Discord tag in the message', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Discord test', page);
+            await enterChatMessageAndAwaitSend('@Discord test', false, page);
         });
 
+        test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
+
+            await openModuleSettings(page),
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page)
+            await enterChatMessageAndAwaitSend('test', true, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page)
+
+        });
         /**
          * Helper function to enter a chat message and await the console message indicating that the sendDiscordMessage hook was hit.
          * 
          * @param message The message to send in the chat.
          * @param page The test's page fixture.
          */
-        async function enterChatMessageAndAwaitSend(message: string, page: Page) {
+        async function enterChatMessageAndAwaitSend(message: string, forwardAllMessages: boolean, page: Page) {
             await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Fill the chat's text area with the message.
             await page.locator(CHAT_TEXT_AREA).focus();
@@ -268,18 +285,22 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should NOT handle new chat message', () => {
-        test('when there are no tags in the message', async ({ page }) => {
+
+        test.beforeEach(async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+        });
+
+        test('when there are no tags in the message and Forward All Messages is not enabled.', async ({ page }) => {
+
             await enterChatMessageAndAwaitLog('test', page);
         });
 
         test('when there is a tag in the message but not for a user', async ({ page }) => {
-            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+
             await enterChatMessageAndAwaitLog('@NotAUser test', page);
         });
 
         test('when there is a tag in the message for a user but the "Ping by User Name" setting is disabled.', async ({ page }) => {
-            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             await openModuleSettings(page);
             await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, false, page);
             await enterChatMessageAndAwaitLog('@Gamemaster test', page);
@@ -288,14 +309,13 @@ test.describe('discord-integration', () => {
         });
 
         test('when there is a tag in the message for a character but the "Ping by Character Name" setting is disabled.', async ({ page }) => {
-            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             await openModuleSettings(page);
             await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, false, page);
             await enterChatMessageAndAwaitLog('@spamton test', page);
             await openModuleSettings(page);
             await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, true, page);
         });
-        
+
         /**
          * Helper function to enter a chat message and await the console message indicating that the sendDiscordMessage hook was NOT hit.
          *  
@@ -341,6 +361,7 @@ test.describe('discord-integration', () => {
             await sendMessageCatchRequest(
                 " Hello World",
                 '@Discord Hello World',
+                false,
                 page);
         });
 
@@ -348,8 +369,20 @@ test.describe('discord-integration', () => {
             await sendMessageCatchRequest(
                 `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`,
                 '@Gamemaster @Player Hello World',
+                false,
                 page);
         });
+
+        test('when message has no tags but Forward All Messages is enabled.', async ({ page }) => {
+            await sendMessageCatchRequest(
+                `Hello World`,
+                'Hello World',
+                true,
+                page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page);
+        });
+
 
         /**
          * Helper function to send a message in chat that will be forwarded to discord, then await a response indicating the HTTP 
@@ -357,31 +390,38 @@ test.describe('discord-integration', () => {
          * 
          * @param expectedMessage The expected body of the request
          * @param chatMessage The message to send in chat.
+         * @param toggleForwardAllMessages Used when testing Forward All messages, to change this setting before sending the message.
          * @param page The test's page fixture.
          */
-        async function sendMessageCatchRequest(expectedMessage: string, chatMessage: string, page: Page) {
+        async function sendMessageCatchRequest(expectedMessage: string, chatMessage: string, toggleForwardAllMessages: boolean, page: Page) {
             // Expected values
             const success = 'Message sending test passed!'
             const responseCode = 200;
             const message = { "content": expectedMessage };
 
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, toggleForwardAllMessages, page);
+
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
-            await page.route(webhook, async (route : Route) => {
+            await page.route(webhook, async (route: Route) => {
                 const request = route.request();
                 expect(request.method()).toMatch('POST');
                 expect(request.url()).toMatch(webhook);
                 expect(await request.headerValue('content-type')).toMatch('application/json');
                 expect(JSON.parse(request.postData())).toEqual(message);
-                route.fulfill( {
+                route.fulfill({
                     status: responseCode,
                     body: success
                 })
             });
+
+            await page.locator('#sidebar-tabs > a[data-tab="chat"] > .fas.fa-comments').click();
             // Send the message, and expect a response indicating the request was correctly formatted.
             await Promise.all([
                 fillInput(CHAT_TEXT_AREA, chatMessage, page),
-                page.waitForResponse(async (response : Response) => {
+                page.waitForResponse(async (response: Response) => {
                     const responseText = await response.text();
                     return new Promise<boolean>((resolve) => {
                         resolve(response.status() === responseCode
@@ -389,6 +429,7 @@ test.describe('discord-integration', () => {
                     });
                 }),
             ]);
+
             // Clean up the routing
             await page.unroute(webhook);
         }
@@ -402,6 +443,8 @@ test.describe('discord-integration', () => {
             await fillDiscordWebhookThenClose(EXPECTED_WEBHOOK, page);
             await page.close();
         })
+
+
     });
 
     test.describe('should NOT send message to Discord', () => {
@@ -598,17 +641,27 @@ test.describe('discord-integration', () => {
      * module settings view.
      * 
      * @param newWebhook The new webhook value.
-     * @param pingByUserName
+     * @param pingByUserName True to check the ping by user name checkbox, false otherwise.
+     * @param pingByCharacterName True to check the ping by character name checkbox, false otherwise.
+     * @param forwardAllMessages True to forward all messages to discord, false to only forward messages with pings.
      * @param page The test's page fixture.
      */
-    async function fillModuleSettingsThenClose(newWebhook: string, pingByUserName: boolean, pingByCharacterName: boolean, page : Page) {
+    async function fillModuleSettingsThenClose(
+        newWebhook: string,
+        pingByUserName: boolean,
+        pingByCharacterName: boolean,
+        forwardAllMessages: boolean,
+        page: Page) {
         const userNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
         pingByUserName ? await userNameCheckbox.check() : await userNameCheckbox.uncheck();
         const characterNameCheckbox = page.locator(PING_BY_CHARACTER_NAME_INPUT);
         pingByCharacterName ? await characterNameCheckbox.check() : await characterNameCheckbox.uncheck();
+        const forwardAllMessagesCheckbox = page.locator(FORWARD_ALL_MESSAGES_INPUT);
+        forwardAllMessages ? await forwardAllMessagesCheckbox.check() : await forwardAllMessagesCheckbox.uncheck();
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
         await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }
+
     /**
      * Fills the discord id field then closes the user configuraton view. Assumes that as this function is called, you are in the
      * user configuration view.
@@ -641,24 +694,22 @@ test.describe('discord-integration', () => {
      * @param checkOrUncheck true if checking the box, false if unchecking it.
      * @param page The test's page fixture.
      */
-     async function fillCheckboxThenClose(inputElement: string, checkOrUncheck: boolean, page: Page) {
+    async function fillCheckboxThenClose(inputElement: string, checkOrUncheck: boolean, page: Page) {
         const checkbox = page.locator(inputElement);
         checkOrUncheck ? await checkbox.check() : await checkbox.uncheck();
         await checkbox.press('Enter');
     }
 
+
+    /**
+     * Indicates what index each user will be in at the login screen's user selection field.
+     */
+    enum PLAYER_INDEX {
+        GAMEMASTER = 1,
+        NO_ID = 2,
+        PLAYER = 3,
+    }
 });
-
-/**
- * Indicates what index each user will be in at the login screen's user selection field.
- */
-enum PLAYER_INDEX {
-    GAMEMASTER = 1,
-    NO_ID = 2,
-    PLAYER = 3,
-}
-
-
 
 
 
