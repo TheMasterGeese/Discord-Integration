@@ -46,6 +46,15 @@ Hooks.once("init", function () {
         default: true,
         type: Boolean
     });
+    // add settings option for forwarding ALL messages vs. forwarding only messages with pings.
+    foundryGame.settings.register("discord-integration", "forwardAllMessages", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsForwardAllMessages"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsForwardAllMessagesHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
 });
 
 // add in the extra field for DiscordID
@@ -126,28 +135,31 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
 
-    gameUsers.forEach((user : User) => {
-        if (game.settings.get('discord-integration', 'pingByUserName')) {
-            discordTags.push(`@${user.name}`)
-        }
-        if (game.settings.get('discord-integration', 'pingByCharacterName') && user.character) {
-            discordTags.push(`@${(user.character as ActorData).name}`)
-        }
-    })
-
     let shouldSendMessage = false;
-    discordTags.forEach(tag => {
-        if (message.includes(tag)) {
-            shouldSendMessage = true;
-        }
-    })
-
+    if (game.settings.get('discord-integration', 'forwardAllMessages')) {
+        shouldSendMessage = true;
+    } else {
+        gameUsers.forEach((user: User) => {
+            if (game.settings.get('discord-integration', 'pingByUserName')) {
+                discordTags.push(`@${user.name}`)
+            }
+            if (game.settings.get('discord-integration', 'pingByCharacterName') && user.character) {
+                discordTags.push(`@${(user.character as ActorData).name}`)
+            }
+        })
+        discordTags.forEach(tag => {
+            if (message.includes(tag)) {
+                shouldSendMessage = true;
+            }
+        })
+    }
     if (shouldSendMessage) {
         Hooks.callAll("sendDiscordMessage", message);
     } else {
         // TODO discord-integration#35: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
         console.log("Message not sent.")
     }
+
 });
 
 Hooks.on("sendDiscordMessage", function (message: string) {
@@ -188,13 +200,13 @@ async function sendDiscordMessage(message: string) {
         }
     })
 
-    usersToChars.forEach((charName : string, userName : string, _map) => {
+    usersToChars.forEach((charName: string, userName: string, _map) => {
         // Ping if a user or their character's name is tagged
         if (message.indexOf(`@${charName}`) !== -1) {
             usersToPing.push(userName);
-        } 
+        }
     })
-    
+
     // search for @Discord in the message
     const shouldPingDiscord: boolean = (message.search(`@Discord`) !== -1);
 

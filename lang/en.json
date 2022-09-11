@@ -5,6 +5,8 @@
    "DISCORDINTEGRATION.SettingsPingByUserNameHint" : "Whether users can be pinged based on their FoundryVTT username.",
    "DISCORDINTEGRATION.SettingsPingByCharacterName" : "Ping By Character Name",
    "DISCORDINTEGRATION.SettingsPingByCharacterNameHint" : "Whether users can be pinged based on their character name.",
+   "DISCORDINTEGRATION.SettingsForwardAllMessages" : "Forward ALL Messages To Discord",
+   "DISCORDINTEGRATION.SettingsForwardAllMessagesHint" : "When checked, ALL messages will be forwarded to the Discord webhook, regardless of pings.",
 
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
