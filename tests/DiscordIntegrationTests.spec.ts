@@ -29,6 +29,7 @@ const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"
 const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
 const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
 const FORWARD_ALL_MESSAGES_INPUT = ' input[name="discord-integration.forwardAllMessages"]';
+const PREPEND_USER_NAME_INPUT = ' input[name="discord-integration.prependUserName"]';
 
 const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
 const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
@@ -64,6 +65,7 @@ test.describe('discord-integration', () => {
         await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
         await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
         await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
+        await expect(page.locator(PREPEND_USER_NAME_INPUT)).not.toBeChecked();
     });
 
     test.describe('should update module settings', () => {
@@ -73,7 +75,7 @@ test.describe('discord-integration', () => {
 
             // Change the webhook
             await openModuleSettings(page);
-            await fillModuleSettingsThenClose(newWebhook, false, false, true, page);
+            await fillModuleSettingsThenClose(newWebhook, false, false, true, true, page);
 
             // Verify the settings was changed
             await openModuleSettings(page);
@@ -81,14 +83,15 @@ test.describe('discord-integration', () => {
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).not.toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toBeChecked();
-
+            await expect(page.locator(PREPEND_USER_NAME_INPUT)).toBeChecked();
             // Revert the value of settings to the default values.
-            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, page);
+            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, false, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
+            await expect(page.locator(PREPEND_USER_NAME_INPUT)).not.toBeChecked();
         });
     });
     test.describe('should NOT update module settings', () => {
@@ -101,6 +104,7 @@ test.describe('discord-integration', () => {
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).toHaveCount(0);
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toHaveCount(0);
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toHaveCount(0);
+            await expect(page.locator(PREPEND_USER_NAME_INPUT)).toHaveCount(0);
         });
     });
 
@@ -163,7 +167,6 @@ test.describe('discord-integration', () => {
             // Verify the ID changed back.
             await openUserConfiguration(uid, page)
             await expect(page.locator(DISCORD_ID_INPUT)).toHaveValue(expectedDiscordId);
-
         }
     });
 
@@ -359,16 +362,29 @@ test.describe('discord-integration', () => {
 
         test('when message has @Discord tag', async ({ page }) => {
             await sendMessageCatchRequest(
-                " Hello World",
+                "Hello World",
                 '@Discord Hello World',
                 false,
+                false,
                 page);
+        });
+
+        test('when message has @Discord tag and "Add Username to Messages" is enabled', async ({ page }) => {
+            await sendMessageCatchRequest(
+                "Gamemaster: Hello World",
+                '@Discord Hello World',
+                false,
+                true,
+                page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(PREPEND_USER_NAME_INPUT, false, page);
         });
 
         test('when message has user tags', async ({ page }) => {
             await sendMessageCatchRequest(
                 `<@${EXPECTED_GM_DISCORD_ID}> <@${EXPECTED_PLAYER_DISCORD_ID}> Hello World`,
                 '@Gamemaster @Player Hello World',
+                false,
                 false,
                 page);
         });
@@ -378,6 +394,7 @@ test.describe('discord-integration', () => {
                 `Hello World`,
                 'Hello World',
                 true,
+                false,
                 page);
             await openModuleSettings(page);
             await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page);
@@ -391,9 +408,11 @@ test.describe('discord-integration', () => {
          * @param expectedMessage The expected body of the request
          * @param chatMessage The message to send in chat.
          * @param toggleForwardAllMessages Used when testing Forward All messages, to change this setting before sending the message.
+         * @param toggleAddUserName User when testing adding the username to messages, to change this setting before sending the message.
          * @param page The test's page fixture.
          */
-        async function sendMessageCatchRequest(expectedMessage: string, chatMessage: string, toggleForwardAllMessages: boolean, page: Page) {
+        async function sendMessageCatchRequest(expectedMessage: string, chatMessage: string, toggleForwardAllMessages: boolean, 
+            toggleAddUserName: boolean, page: Page) {
             // Expected values
             const success = 'Message sending test passed!'
             const responseCode = 200;
@@ -402,7 +421,7 @@ test.describe('discord-integration', () => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             
             await openModuleSettings(page);
-            await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, toggleForwardAllMessages, page);
+            await fillModuleSettingsThenClose(FUNCTIONAL_WEBHOOK, true, true, toggleForwardAllMessages, toggleAddUserName, page);
 
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
             await page.route(webhook, async (route: Route) => {
@@ -644,6 +663,7 @@ test.describe('discord-integration', () => {
      * @param pingByUserName True to check the ping by user name checkbox, false otherwise.
      * @param pingByCharacterName True to check the ping by character name checkbox, false otherwise.
      * @param forwardAllMessages True to forward all messages to discord, false to only forward messages with pings.
+     * @param prependUserName True to add the username to the front of messages that are sent, false otherwise.
      * @param page The test's page fixture.
      */
     async function fillModuleSettingsThenClose(
@@ -651,6 +671,7 @@ test.describe('discord-integration', () => {
         pingByUserName: boolean,
         pingByCharacterName: boolean,
         forwardAllMessages: boolean,
+        prependUserName: boolean,
         page: Page) {
         const userNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
         pingByUserName ? await userNameCheckbox.check() : await userNameCheckbox.uncheck();
@@ -658,6 +679,8 @@ test.describe('discord-integration', () => {
         pingByCharacterName ? await characterNameCheckbox.check() : await characterNameCheckbox.uncheck();
         const forwardAllMessagesCheckbox = page.locator(FORWARD_ALL_MESSAGES_INPUT);
         forwardAllMessages ? await forwardAllMessagesCheckbox.check() : await forwardAllMessagesCheckbox.uncheck();
+        const prependUserNameCheckbox = page.locator(PREPEND_USER_NAME_INPUT);
+        prependUserName ? await prependUserNameCheckbox.check() : await prependUserNameCheckbox.uncheck();
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
         await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }

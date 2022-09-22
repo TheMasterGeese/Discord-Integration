@@ -55,6 +55,15 @@ Hooks.once("init", function () {
         default: false,
         type: Boolean
     });
+    // add settings option for adding the player's name to the discord message
+    foundryGame.settings.register("discord-integration", "prependUserName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.PrependUserName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.PrependUserNameHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
 });
 
 // add in the extra field for DiscordID
@@ -131,7 +140,7 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
  */
 
 // whenever someone sends a chat message, if it is marked up properly forward it to Discord.
-Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
+Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string, messageData: ChatMessageData) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
 
@@ -154,6 +163,12 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
         })
     }
     if (shouldSendMessage) {
+        // If we are appending the sender's name to the message, we do so here.
+        if (game.settings.get('discord-integration', 'prependUserName')) {
+            const messageSenderId = messageData.user;
+            const messageSender = gameUsers.find(user => user.id === messageSenderId);
+            message = messageSender.name + ": " + message;
+        }
         Hooks.callAll("sendDiscordMessage", message);
     } else {
         // TODO discord-integration#35: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
@@ -230,7 +245,7 @@ async function sendDiscordMessage(message: string) {
         })
         // else if Discord as a whole is being pinged, remove the "@Discord" part and then send the message.
     } else if (shouldPingDiscord) {
-        message = message.split("@Discord").pop() || "";
+        message = message.replace("@Discord ", "") || "";
     }
 
     const messageJSON = {
@@ -255,4 +270,19 @@ async function sendDiscordMessage(message: string) {
             data: jsonMessage
         });
     }
+}
+
+class ChatMessageData {
+    blind: boolean;
+    content: string;
+    emote: boolean;
+    flags: object;
+    flavor: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    roll: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    sound: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    speaker: object;
+    timestamp: number;
+    type: number;
+    user: string;
+    whisper: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 }
