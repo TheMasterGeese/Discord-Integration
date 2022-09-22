@@ -8,3 +8,5 @@
 {"_id":"x55ufRDd8smIrZoP","key":"pf2e.worldSchemaVersion","value":"0.769"}
 {"_id":"D7xh28F6nxda39Xv","key":"discord-integration.pingByCharacterName","value":"true"}
 {"_id":"veVq596EHgZP0TZ0","key":"discord-integration.pingByUserName","value":"true"}
+{"_id":"9z0OvWgOWBErjpdq","key":"discord-integration.forwardAllMessages","value":"false"}
+{"_id":"sKTxq3hPplwUiTRI","key":"discord-integration.prependUserName","value":"false"}
