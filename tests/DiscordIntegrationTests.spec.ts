@@ -208,9 +208,21 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should handle new chat messages', () => {
+        test.describe('from GM', () => {
+            test.beforeEach(async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
-        test.beforeEach(async ({ page }) => {
-            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+                // attach a listener to the sendDiscordMessage hook to signal test completion.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
+                });
+            });
+
+            test('when there is a tag in the message for a user', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster test', page);
+            });
 
             // attach a listener to the sendDiscordMessage hook to signal test completion.
             await page.evaluate(() => {
@@ -218,7 +230,6 @@ test.describe('discord-integration', () => {
                     console.log("Send Discord Message Hook successfully caught.")
                 });
             });
-        });
 
         test('when there is a tag in the message for a user', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
@@ -227,6 +238,17 @@ test.describe('discord-integration', () => {
         test('when there is are two tags in the message: one for a user', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
         });
+        test.describe('from Player', () => {
+            test.beforeEach(async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.PLAYER, page);
+
+                // attach a listener to the sendDiscordMessage hook to signal test completion.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
+                });
+            });
 
         test('when there is are two tags in the message: both for users', async ({ page }) => {
             await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
