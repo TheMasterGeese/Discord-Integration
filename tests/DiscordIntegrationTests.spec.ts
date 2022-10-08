@@ -208,59 +208,118 @@ test.describe('discord-integration', () => {
     });
 
     test.describe('should handle new chat messages', () => {
+        test.describe('from GM', () => {
+            test.beforeEach(async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
 
-        test.beforeEach(async ({ page }) => {
-            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
-
-            // attach a listener to the sendDiscordMessage hook to signal test completion.
-            await page.evaluate(() => {
-                Hooks.once("sendDiscordMessage", () => {
-                    console.log("Send Discord Message Hook successfully caught.")
+                // attach a listener to the sendDiscordMessage hook to signal test completion.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
                 });
+            });
+
+            test('when there is a tag in the message for a user', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
+            });
+            test('when there is are two tags in the message: one for a user', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
+            });
+            test('when there is are two tags in the message: both for users', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
+            });
+    
+            test('when there is a tag in the message for a character', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: one for a character', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: both for characters', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Fate @spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', false, page);
+            });
+    
+            test('when there is a @Discord tag in the message', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Discord test', false, page);
+            });
+    
+            test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
+    
+                await openModuleSettings(page),
+                    await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page)
+                await enterChatMessageAndAwaitSend('test', true, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page)
+    
             });
         });
 
-        test('when there is a tag in the message for a user', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
-        });
+        test.describe('from Player', () => {
+            test.beforeEach(async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.PLAYER, page);
 
-        test('when there is are two tags in the message: one for a user', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
-        });
+                // attach a listener to the sendDiscordMessage hook to signal test completion.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
+                });
+            });
+            test('when there is a tag in the message for a user', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
+            });
+            test('when there is are two tags in the message: one for a user', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
+            });
+            test('when there is are two tags in the message: both for users', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
+            });
+    
+            test('when there is a tag in the message for a character', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: one for a character', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: both for characters', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Fate @spamton test', false, page);
+            });
+    
+            test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', false, page);
+            });
+    
+            test('when there is a @Discord tag in the message', async ({ page }) => {
+                await enterChatMessageAndAwaitSend('@Discord test', false, page);
+            });
+    
+            test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page);
+                await logOnAsUser(PLAYER_INDEX.PLAYER, page);
+                // Need to re-attach listener when we log back in as player, the original one won't still be there.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
+                });
+                await enterChatMessageAndAwaitSend('test', true, page);
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page);
+            });
+         });
 
-        test('when there is are two tags in the message: both for users', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
-        });
-
-        test('when there is a tag in the message for a character', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@spamton test', false, page);
-        });
-
-        test('when there are two tags in the message: one for a character', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Notacharacter @spamton test', false, page);
-        });
-
-        test('when there are two tags in the message: both for characters', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Fate @spamton test', false, page);
-        });
-
-        test('when there are two tags in the message: one for a user, another for a character.', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Gamemaster @Fate test', false, page);
-        });
-
-        test('when there is a @Discord tag in the message', async ({ page }) => {
-            await enterChatMessageAndAwaitSend('@Discord test', false, page);
-        });
-
-        test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
-
-            await openModuleSettings(page),
-                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page)
-            await enterChatMessageAndAwaitSend('test', true, page);
-            await openModuleSettings(page);
-            await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page)
-
-        });
         /**
          * Helper function to enter a chat message and await the console message indicating that the sendDiscordMessage hook was hit.
          * 
