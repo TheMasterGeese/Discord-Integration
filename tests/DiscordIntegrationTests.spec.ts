@@ -23,7 +23,8 @@ let webhook: string;
 /**
  * Settings Menu
  */
-const MODULE_SETTINGS_TAB = '#client-settings > section > form.flexcol > nav > a[data-tab="modules"]';
+const SETTINGS_TAB = '#sidebar-tabs > a[data-tab="settings"] > .fas.fa-cogs';
+const CLIENT_SETTINGS = '#client-settings';
 const CONFIGURE_SETTINGS_BUTTON = '#settings-game > button[data-action="configure"]';
 const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"]';
 const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
@@ -804,13 +805,10 @@ test.describe('discord-integration', () => {
      */
     async function openModuleSettings(page: Page) {
         // Click the settings icon in the sidemenu
-        await page.locator('#sidebar-tabs > a[data-tab="settings"] > .fas.fa-cogs').click();
+        await page.locator(SETTINGS_TAB).click();
 
         // Go to the "Configure settings" menu
         await page.locator(CONFIGURE_SETTINGS_BUTTON).click();
-
-        // Go to the "Module Settings" menu
-        await page.locator(MODULE_SETTINGS_TAB).click();
     }
 
     /**
@@ -846,7 +844,7 @@ test.describe('discord-integration', () => {
      */
     async function fillDiscordWebhookThenClose(newWebhook: string, page: Page) {
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
-        await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
+        await page.waitForSelector(SETTINGS_TAB, { state: 'detached' })
     }
 
     /**
@@ -879,7 +877,7 @@ test.describe('discord-integration', () => {
         const showToggleButtonCheckbox = page.locator(SHOW_TOGGLE_BUTTON_INPUT);
         showToggleButton ? await showToggleButtonCheckbox.check() : await showToggleButtonCheckbox.uncheck();
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
-        await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
+        await page.waitForSelector(CLIENT_SETTINGS, { state: 'detached' })
     }
 
     /**
