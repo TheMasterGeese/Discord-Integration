@@ -9,7 +9,6 @@ const path = require('path');
 const rename = require('gulp-rename');
 const sm = require('gulp-sourcemaps');
 const stringify = require('json-stringify-pretty-compact');
-const tabify = require('gulp-tabify')
 const ts = require('gulp-typescript');
 const util = require('util');
 const zip = require('gulp-zip');
@@ -93,7 +92,6 @@ function buildSource(keepSources, minifySources = false, output = null) {
 			mangle: false,
 			noSource: true
 		}));
-		else stream = stream.pipe(tabify(4, false));
 		return stream.pipe(gulp.dest((output || DIST) + SOURCE));
 	}
 }
@@ -135,7 +133,7 @@ function outputTemplates(output = null) { return () => gulp.src(TEMPLATES + GLOB
 function outputStylesCSS(output = null) { return () => gulp.src(CSS + GLOB).pipe(gulp.dest((output || DIST) + CSS)); }
 function outputSounds(output = null) { return () => gulp.src(SOUNDS + GLOB).pipe(gulp.dest((output || DIST) + SOUNDS)); }
 function outputMetaFiles(output = null) { return () => gulp.src(['LICENSE', 'README.md', 'CHANGELOG.md']).pipe(gulp.dest((output || DIST))); }
-function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "\\" + DATA + WORLDS))); }
+function outputTestWorld() { return () => gulp.src(WORLDS + GLOB).pipe(gulp.dest((process.env.LOCAL_DATA + "/" + DATA + WORLDS))); }
 
 /**
  * Copy files to module named directory and then compress that folder into a zip
@@ -198,13 +196,16 @@ function test() {
 			({ stdout, stderr } = await exec(`docker inspect --format="{{json .State.Health.Status}}" ${DOCKER_CONTAINER}`));
 		} while (stdout !== '"healthy"\n');
 		// run tests
-		({ stdout, stderr } = await exec(`npx playwright test`));
-		console.log(stdout);
-		console.log(stderr);
-		// tear down docker container
-		({ stdout, stderr } = await exec(`docker-compose down`));
-		console.log(stdout);
-		console.log(stderr);
+		try {
+			({ stdout, stderr } = await exec(`npx playwright test`));
+			console.log(stdout);
+			console.log(stderr);
+		} finally {
+			// tear down docker container
+			({ stdout, stderr } = await exec(`docker-compose down`));
+			console.log(stdout);
+			console.log(stderr);
+		}
 	}
 }
 exports.test = test();
@@ -239,7 +240,6 @@ exports.cleanAll = cleanAll();
 exports.default = gulp.series(
 	lint()
 	, dev()
-	, outputTestWorld()
 	, test()
 	, gulp.parallel(
 		buildSource(true, false)
@@ -268,16 +268,16 @@ function dev() {
 			, outputStylesCSS(DEV_DIST())
 			, outputSounds(DEV_DIST())
 			, outputMetaFiles(DEV_DIST())
+			, outputTestWorld(DEV_DIST())
 		)
 	);
 }
-
+exports.dev = dev();
 /**
  * Sets up a file watch on the project to detect any file changes and automatically rebuild those components, and then copy them to the Development Environment.
  */
 exports.watch = function () {
 	const devDist = DEV_DIST();
-	exports.dev();
 	gulp.watch(SOURCE + GLOB, gulp.series(plog('deleting: ' + devDist + SOURCE + GLOB), pdel(devDist + SOURCE + GLOB, { force: true }), buildSource(true, false, devDist), plog('sources done.')));
 	gulp.watch([CSS + GLOB, 'module.json', 'package.json'], gulp.series(reloadPackage, buildManifest(devDist), plog('manifest done.')));
 	gulp.watch(LANG + GLOB, gulp.series(pdel(devDist + LANG + GLOB, { force: true }), outputLanguages(devDist), plog('langs done.')));

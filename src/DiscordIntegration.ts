@@ -1,5 +1,7 @@
-// Thrown on Hooks.on(), cause and fix unknown
+// TODO discord-integration#34: Thrown on Hooks.on(), cause and fix unknown
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+
+import { ActorData } from "@league-of-foundry-developers/foundry-vtt-types/src/foundry/common/data/data.mjs/actorData";
 
 let gameUsers: StoredDocument<User>[]
 let foundryGame: Game;
@@ -27,13 +29,49 @@ Hooks.once("init", function () {
         type: String,
         default: "",
     });
+    // add settings option for pinging by on character name
+    foundryGame.settings.register("discord-integration", "pingByCharacterName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByCharacterName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByCharacterNameHint"),
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
+    // add settings option for pinging by user name
+    foundryGame.settings.register("discord-integration", "pingByUserName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByUserName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsPingByUserNameHint"),
+        scope: "world",
+        config: true,
+        default: true,
+        type: Boolean
+    });
+    // add settings option for forwarding ALL messages vs. forwarding only messages with pings.
+    foundryGame.settings.register("discord-integration", "forwardAllMessages", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsForwardAllMessages"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.SettingsForwardAllMessagesHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
+    // add settings option for adding the player's name to the discord message
+    foundryGame.settings.register("discord-integration", "prependUserName", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.PrependUserName"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.PrependUserNameHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
 });
 
 // add in the extra field for DiscordID
 Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = foundryGame.users.contents.filter((user: User) => { return user.id === (config.object).data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -103,26 +141,41 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
  */
 
 // whenever someone sends a chat message, if it is marked up properly forward it to Discord.
-Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string) {
+Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string, messageData: ChatMessageData) {
     const discordTags: string[] = [];
     discordTags.push("@Discord");
-    foundryGame.users.forEach(user => {
-        discordTags.push(`@${user.name}`)
-    })
 
     let shouldSendMessage = false;
-    discordTags.forEach(tag => {
-        if (message.includes(tag)) {
-            shouldSendMessage = true;
-        }
-    })
-
+    if (game.settings.get('discord-integration', 'forwardAllMessages')) {
+        shouldSendMessage = true;
+    } else {
+        gameUsers.forEach((user: User) => {
+            if (game.settings.get('discord-integration', 'pingByUserName')) {
+                discordTags.push(`@${user.name}`)
+            }
+            if (game.settings.get('discord-integration', 'pingByCharacterName') && user.character) {
+                discordTags.push(`@${(user.character as ActorData).name}`)
+            }
+        })
+        discordTags.forEach(tag => {
+            if (message.includes(tag)) {
+                shouldSendMessage = true;
+            }
+        })
+    }
     if (shouldSendMessage) {
+        // If we are appending the sender's name to the message, we do so here.
+        if (game.settings.get('discord-integration', 'prependUserName')) {
+            const messageSenderId = messageData.user;
+            const messageSender = gameUsers.find(user => user.id === messageSenderId);
+            message = messageSender.name + ": " + message;
+        }
         Hooks.callAll("sendDiscordMessage", message);
     } else {
-        // TODO: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
+        // TODO discord-integration#35: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
         console.log("Message not sent.")
     }
+
 });
 
 Hooks.on("sendDiscordMessage", function (message: string) {
@@ -150,11 +203,22 @@ async function sendDiscordMessage(message: string) {
         return;
     }
 
-    // search for any @<username> strings in the message
-    const userNames: string[] = gameUsers.map((user: User) => { return user.name }); // get a list of usernames
+    const usersToChars: Map<string, string> = new Map<string, string>();
+
     const usersToPing: string[] = [];
-    userNames.forEach((userName: string) => {
-        if (message.indexOf(`@${userName}`) !== -1) {
+
+    gameUsers.forEach((user: User) => {
+        if (message.indexOf(`@${user.name}`) !== -1) {
+            usersToPing.push(user.name);
+        }
+        if (user.character) {
+            usersToChars.set(user.name, ((user.character as ActorData).name));
+        }
+    })
+
+    usersToChars.forEach((charName: string, userName: string, _map) => {
+        // Ping if a user or their character's name is tagged
+        if (message.indexOf(`@${charName}`) !== -1) {
             usersToPing.push(userName);
         }
     })
@@ -176,12 +240,13 @@ async function sendDiscordMessage(message: string) {
                     sendMessage = false;
                     return;
                 }
-                message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`)
+                message = message.replace(`@${userName}`, `<@${currentUserDiscordID}>`);
+                message = message.replace(`@${usersToChars.get(userName)}`, `<@${currentUserDiscordID}>`);
             }
         })
         // else if Discord as a whole is being pinged, remove the "@Discord" part and then send the message.
     } else if (shouldPingDiscord) {
-        message = message.split("@Discord").pop() || "";
+        message = message.replace("@Discord ", "") || "";
     }
 
     const messageJSON = {
@@ -206,4 +271,19 @@ async function sendDiscordMessage(message: string) {
             data: jsonMessage
         });
     }
+}
+
+class ChatMessageData {
+    blind: boolean;
+    content: string;
+    emote: boolean;
+    flags: object;
+    flavor: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    roll: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    sound: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    speaker: object;
+    timestamp: number;
+    type: number;
+    user: string;
+    whisper: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 }
