@@ -10,6 +10,9 @@ let foundryGame: Game;
 const DISCORD_MAX_ID_LENGTH = 18;
 const DISCORD_MIN_ID_LENGTH = 17;
 
+// Element IDs
+const TOKEN_CONTROLS_TOGGLE_BUTTON = '#controls > ol.sub-controls.app.control-tools.flexcol.active > li[data-tool="discord-integration-toggle"]';
+
 function getGame(): Game {
     return game;
 }
@@ -45,7 +48,8 @@ Hooks.once("init", function () {
         scope: "world",
         config: true,
         default: true,
-        type: Boolean
+        type: Boolean,
+
     });
     // add settings option for forwarding ALL messages vs. forwarding only messages with pings.
     foundryGame.settings.register("discord-integration", "forwardAllMessages", {
@@ -65,20 +69,57 @@ Hooks.once("init", function () {
         default: false,
         type: Boolean
     });
+    // add settings option to show/hide toggle button in tokencontrols
+    foundryGame.settings.register("discord-integration", "tokenControlsButton", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButton"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButtonHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
+    // property manipualted by the token controls button to turn the mod's functionality on/off without disabling the entire mod
+    foundryGame.settings.register("discord-integration", "tokenControlsEnabled", {
+        scope: "world",
+        config: false,
+        default: true,
+        type: Boolean
+    });
 });
 
+// Add button to to the token submenu in Scene controls to enable/disable the mod.
+Hooks.on('getSceneControlButtons', function (controls: SceneControl[]) {
+    // Just like the module settings, only the GM should be able to toggle the mod on/off.
+    if (game.user.isGM && game.settings.get('discord-integration', 'tokenControlsButton')) {
+        controls.forEach((control: SceneControl) => {
+            if (control.name === 'token') {
+                const tokenControlsButton = {
+                    name: 'discord-integration-toggle',
+                    title: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButtonTooltip"),
+                    icon: 'fab fa-discord',
+                    toggle: true,
+                    active: game.settings.get('discord-integration', 'tokenControlsEnabled') as boolean,
+                    onClick: toggleForwarding,
+                };
+                control.tools.push(tokenControlsButton);
+            }
+            console.log(control.name);
+        })
+    }
+})
+
 // add in the extra field for DiscordID
-Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
+Hooks.on('renderUserConfig', async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
     const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
-    discordUserId = discordUserId ? discordUserId : ""
+    discordUserId = discordUserId ? discordUserId : '';
 
     // create the input field to configure it.
-    const discordIdInput = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
+    const discordIdInput = `<input type="text" name='discord-id-config' value="${discordUserId}" data-dtype="String">`
 
     const discordIDSetting = `
         <div id="discord-id-setting" class="form-group discord">
@@ -146,7 +187,12 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string, messageDat
     discordTags.push("@Discord");
 
     let shouldSendMessage = false;
-    if (game.settings.get('discord-integration', 'forwardAllMessages')) {
+    // If the toggle button is turned off, we ignore the value of tokenControlsEnabled. 
+    // This is to avoid a situation where the last setting of the button was to "disabled" and the button is disabled,
+    // making it unclear why messages will not send.
+    if (game.settings.get('discord-integration', 'tokenControlsButton') && !game.settings.get('discord-integration', 'tokenControlsEnabled')) {
+        shouldSendMessage = false;
+    } else if (game.settings.get('discord-integration', 'forwardAllMessages')) {
         shouldSendMessage = true;
     } else {
         gameUsers.forEach((user: User) => {
@@ -183,6 +229,15 @@ Hooks.on("sendDiscordMessage", function (message: string) {
         console.error(reason);
     });
 });
+
+/**
+ * Listener function for the button in the Token Settings menu to toggle forwarding of messages to Discord.
+ */
+async function toggleForwarding() {
+    const newSettingValue = !game.settings.get('discord-integration', 'tokenControlsEnabled')
+    await game.settings.set('discord-integration', 'tokenControlsEnabled', newSettingValue);
+    newSettingValue ? $(TOKEN_CONTROLS_TOGGLE_BUTTON).addClass('active') : $(TOKEN_CONTROLS_TOGGLE_BUTTON).removeClass('active');
+}
 
 /**
  * Sends a message through the discord webhook as configured in settings.
