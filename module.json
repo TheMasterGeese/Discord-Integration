@@ -1,9 +1,19 @@
 {
-	"name": "{{name}}",
+	"id": "{{name}}",
 	"title": "{{title}}",
 	"description": "{{description}}",
 	"version": "{{version}}",
-	"author": "Khankar#2236",
+	"authors": [
+		{
+			"name": "MasterGeese",
+			"email": "themastergeese@gmail.com",
+			"discord": "Khankar#2236"
+		}
+	],
+	"compatibility": {
+		"minimum": 9,
+		"verified": "10.287"
+	},
 	"minimumCoreVersion": "9",
 	"compatibleCoreVersion": "9",
 	"esmodules": "{{sources}}",

@@ -112,7 +112,7 @@ Hooks.on('getSceneControlButtons', function (controls: SceneControl[]) {
 Hooks.on('renderUserConfig', async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
-    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object)._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
@@ -152,7 +152,7 @@ Hooks.on('renderUserConfig', async function (config: UserConfig, element: JQuery
 // commit any changes to userConfig
 Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery) {
     // find the user that the config was open for
-    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object).data._id })[0];
+    const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object)._id })[0];
     const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
     if (discordID.length > DISCORD_MAX_ID_LENGTH || discordID.length < DISCORD_MIN_ID_LENGTH || isNaN(parseInt(discordID))) {
