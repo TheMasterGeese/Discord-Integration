@@ -9,9 +9,12 @@
    "DISCORDINTEGRATION.SettingsForwardAllMessagesHint" : "When checked, ALL messages will be forwarded to the Discord webhook, regardless of pings.",
    "DISCORDINTEGRATION.PrependUserName" : "Add Username to messages",
    "DISCORDINTEGRATION.PrependUserNameHint" : "When checked, A player's FoundryVTT username is added to the start of each of their messages that is forwarded to Discord.",
-
+   "DISCORDINTEGRATION.TokenControlsButton" : "Show Token Controls Button ",
+   "DISCORDINTEGRATION.TokenControlsButtonHint" : "Show button under Token Controls to enable/disable forwarding messages.",
+   
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
+   "DISCORDINTEGRATION.TokenControlsButtonTooltip" : "Enable/Disable Forwarding Chat messages to Discord",
 
    "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be an 18-digit number.",
 

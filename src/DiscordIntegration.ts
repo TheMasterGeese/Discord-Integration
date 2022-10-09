@@ -64,20 +64,45 @@ Hooks.once("init", function () {
         default: false,
         type: Boolean
     });
+    // add settings option to show/hide toggle button in tokencontrols
+    foundryGame.settings.register("discord-integration", "tokenControlsButton", {
+        name: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButton"),
+        hint: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButtonHint"),
+        scope: "world",
+        config: true,
+        default: false,
+        type: Boolean
+    });
 });
 
+// Add button to toggle in controls
+Hooks.on('getSceneControlButtons', function (controls : SceneControl[]) {
+    if (game.settings.get('discord-integration', 'tokenControlsButton')) {
+        controls.forEach((control : SceneControl) => {
+            if (control.name === 'token') {
+                const tokenControlsButton = {
+                    name: 'discord-integration-toggle',
+                    title: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButtonTooltip"),
+                    icon: 'fab fa-discord',
+                };
+                control.tools.push(tokenControlsButton);
+            }
+            console.log(control.name);
+        })
+    }
+})
 // add in the extra field for DiscordID
-Hooks.on("renderUserConfig", async function (config: UserConfig, element: JQuery) {
+Hooks.on('renderUserConfig', async function (config: UserConfig, element: JQuery) {
 
     // find the user that you're opening config for
     const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object).data._id })[0];
 
     // get their Discord ID if it exists
     let discordUserId: string = await foundryUser.getFlag('discord-integration', 'discordID') as string
-    discordUserId = discordUserId ? discordUserId : ""
+    discordUserId = discordUserId ? discordUserId : '';
 
     // create the input field to configure it.
-    const discordIdInput = `<input type="text" name="discord-id-config" value="${discordUserId}" data-dtype="String">`
+    const discordIdInput = `<input type="text" name='discord-id-config' value="${discordUserId}" data-dtype="String">`
 
     const discordIDSetting = `
         <div id="discord-id-setting" class="form-group discord">
