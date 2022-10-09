@@ -16,7 +16,7 @@
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
    "DISCORDINTEGRATION.TokenControlsButtonTooltip" : "Enable/Disable Forwarding Chat messages to Discord",
 
-   "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be an 18-digit number.",
+   "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be a 17 or 18 digit number.",
 
    "DISCORDINTEGRATION.CouldNotSendMessage" : "Could not send Discord message: ",
 

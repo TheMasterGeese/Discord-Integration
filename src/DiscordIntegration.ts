@@ -6,8 +6,9 @@ import { ActorData } from "@league-of-foundry-developers/foundry-vtt-types/src/f
 let gameUsers: StoredDocument<User>[]
 let foundryGame: Game;
 
-// Discord user-ids are always exactly 18 digits.
-const DISCORD_ID_LENGTH = 18;
+// Discord user-ids are either 17 or 18 digits.
+const DISCORD_MAX_ID_LENGTH = 18;
+const DISCORD_MIN_ID_LENGTH = 17;
 
 // Element IDs
 const TOKEN_CONTROLS_TOGGLE_BUTTON = '#controls > ol.sub-controls.app.control-tools.flexcol.active > li[data-tool="discord-integration-toggle"]';
@@ -152,7 +153,7 @@ Hooks.on("closeUserConfig", async function (config: UserConfig, element: JQuery)
     const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object).data._id })[0];
     const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
-    if (discordID.length !== DISCORD_ID_LENGTH || isNaN(parseInt(discordID))) {
+    if (discordID.length > DISCORD_MAX_ID_LENGTH || discordID.length < DISCORD_MIN_ID_LENGTH || isNaN(parseInt(discordID))) {
         ui.notifications.error(foundryGame.i18n.localize("DISCORDINTEGRATION.InvalidIdError"))
     } else {
         await foundryUser.update({ 'flags.discord-integration.discordID': discordID });
