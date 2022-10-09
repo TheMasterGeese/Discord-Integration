@@ -29,7 +29,8 @@ const DISCORD_WEBHOOK_INPUT = 'input[name="discord-integration\\.discordWebhook"
 const PING_BY_CHARACTER_NAME_INPUT = 'input[name="discord-integration.pingByCharacterName"]';
 const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"]';
 const FORWARD_ALL_MESSAGES_INPUT = ' input[name="discord-integration.forwardAllMessages"]';
-const PREPEND_USER_NAME_INPUT = ' input[name="discord-integration.prependUserName"]';
+const PREPEND_USER_NAME_INPUT = 'input[name="discord-integration.prependUserName"]';
+const SHOW_TOGGLE_BUTTON_INPUT = 'input[name="discord-integration.tokenControlsButton"]';
 
 const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
 const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
@@ -66,6 +67,7 @@ test.describe('discord-integration', () => {
         await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
         await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
         await expect(page.locator(PREPEND_USER_NAME_INPUT)).not.toBeChecked();
+        await expect(page.locator(SHOW_TOGGLE_BUTTON_INPUT)).not.toBeChecked();
     });
 
     test.describe('should update module settings', () => {
@@ -75,7 +77,7 @@ test.describe('discord-integration', () => {
 
             // Change the webhook
             await openModuleSettings(page);
-            await fillModuleSettingsThenClose(newWebhook, false, false, true, true, page);
+            await fillModuleSettingsThenClose(newWebhook, false, false, true, true, true, page);
 
             // Verify the settings was changed
             await openModuleSettings(page);
@@ -84,14 +86,16 @@ test.describe('discord-integration', () => {
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).not.toBeChecked();
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toBeChecked();
             await expect(page.locator(PREPEND_USER_NAME_INPUT)).toBeChecked();
+            await expect(page.locator(SHOW_TOGGLE_BUTTON_INPUT)).toBeChecked();
             // Revert the value of settings to the default values.
-            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, false, page);
+            await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, false, false, page);
             await openModuleSettings(page);
             await expect(page.locator(DISCORD_WEBHOOK_INPUT)).toHaveValue(EXPECTED_WEBHOOK);
             await expect(page.locator(PING_BY_USER_NAME_INPUT)).toBeChecked();
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toBeChecked();
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).not.toBeChecked();
             await expect(page.locator(PREPEND_USER_NAME_INPUT)).not.toBeChecked();
+            await expect(page.locator(SHOW_TOGGLE_BUTTON_INPUT)).not.toBeChecked();
         });
     });
     test.describe('should NOT update module settings', () => {
@@ -105,6 +109,7 @@ test.describe('discord-integration', () => {
             await expect(page.locator(PING_BY_CHARACTER_NAME_INPUT)).toHaveCount(0);
             await expect(page.locator(FORWARD_ALL_MESSAGES_INPUT)).toHaveCount(0);
             await expect(page.locator(PREPEND_USER_NAME_INPUT)).toHaveCount(0);
+            await expect(page.locator(SHOW_TOGGLE_BUTTON_INPUT)).toHaveCount(0);
         });
     });
 
@@ -177,10 +182,10 @@ test.describe('discord-integration', () => {
 
         });
 
-        test('when discord-id-config input is not an 18-digit number', async ({ page }) => {
+        test('when discord-id-config input is not a 17- or 18-digit number', async ({ page }) => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             await testInvalidInput('not an 18-digit nu', page);
-            await testInvalidInput('12345678912345678', page);
+            await testInvalidInput('1234567891234567', page);
             await testInvalidInput('1234567891234567891', page);
         });
 
@@ -480,7 +485,7 @@ test.describe('discord-integration', () => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
             
             await openModuleSettings(page);
-            await fillModuleSettingsThenClose(FUNCTIONAL_WEBHOOK, true, true, toggleForwardAllMessages, toggleAddUserName, page);
+            await fillModuleSettingsThenClose(FUNCTIONAL_WEBHOOK, true, true, toggleForwardAllMessages, toggleAddUserName, false, page);
 
             // Any requests sent to the webhook will instead be routed through here to check the request's settings.
             await page.route(webhook, async (route: Route) => {
@@ -731,6 +736,7 @@ test.describe('discord-integration', () => {
         pingByCharacterName: boolean,
         forwardAllMessages: boolean,
         prependUserName: boolean,
+        showToggleButton: boolean,
         page: Page) {
         const userNameCheckbox = page.locator(PING_BY_USER_NAME_INPUT);
         pingByUserName ? await userNameCheckbox.check() : await userNameCheckbox.uncheck();
@@ -740,6 +746,8 @@ test.describe('discord-integration', () => {
         forwardAllMessages ? await forwardAllMessagesCheckbox.check() : await forwardAllMessagesCheckbox.uncheck();
         const prependUserNameCheckbox = page.locator(PREPEND_USER_NAME_INPUT);
         prependUserName ? await prependUserNameCheckbox.check() : await prependUserNameCheckbox.uncheck();
+        const showToggleButtonCheckbox = page.locator(SHOW_TOGGLE_BUTTON_INPUT);
+        showToggleButton ? await showToggleButtonCheckbox.check() : await showToggleButtonCheckbox.uncheck();
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
         await page.waitForSelector(MODULE_SETTINGS_TAB, { state: 'detached' })
     }

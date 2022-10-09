@@ -10,3 +10,5 @@
 {"_id":"veVq596EHgZP0TZ0","key":"discord-integration.pingByUserName","value":"true"}
 {"_id":"9z0OvWgOWBErjpdq","key":"discord-integration.forwardAllMessages","value":"false"}
 {"_id":"sKTxq3hPplwUiTRI","key":"discord-integration.prependUserName","value":"false"}
+{"_id":"NCY9rlf17VFRavQp","key":"discord-integration.tokenControlsButton","value":"false"}
+{"_id":"inysvRsdpaIjaimL","key":"discord-integration.tokenControlsEnabled","value":"true"}
