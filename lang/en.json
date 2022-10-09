@@ -1,20 +1,20 @@
 {
    "DISCORDINTEGRATION.SettingsDiscordWebhook" : "Discord Webhook",
-   "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the Webhook to send messages through",
+   "DISCORDINTEGRATION.SettingsDiscordWebhookHint" : "The URL of the webhook to send messages through",
    "DISCORDINTEGRATION.SettingsPingByUserName" : "Ping By User Name",
    "DISCORDINTEGRATION.SettingsPingByUserNameHint" : "Whether users can be pinged based on their FoundryVTT username.",
    "DISCORDINTEGRATION.SettingsPingByCharacterName" : "Ping By Character Name",
    "DISCORDINTEGRATION.SettingsPingByCharacterNameHint" : "Whether users can be pinged based on their character name.",
    "DISCORDINTEGRATION.SettingsForwardAllMessages" : "Forward ALL Messages To Discord",
    "DISCORDINTEGRATION.SettingsForwardAllMessagesHint" : "When checked, ALL messages will be forwarded to the Discord webhook, regardless of pings.",
-   "DISCORDINTEGRATION.PrependUserName" : "Add Username to messages",
+   "DISCORDINTEGRATION.PrependUserName" : "Add Username Ro Messages",
    "DISCORDINTEGRATION.PrependUserNameHint" : "When checked, A player's FoundryVTT username is added to the start of each of their messages that is forwarded to Discord.",
-   "DISCORDINTEGRATION.TokenControlsButton" : "Show Token Controls Button ",
-   "DISCORDINTEGRATION.TokenControlsButtonHint" : "Show button under Token Controls to enable/disable forwarding messages.",
+   "DISCORDINTEGRATION.TokenControlsButton" : "Show Token Controls Button",
+   "DISCORDINTEGRATION.TokenControlsButtonHint" : "Show button under token controls to enable/disable forwarding messages to Discord.",
    
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
-   "DISCORDINTEGRATION.TokenControlsButtonTooltip" : "Enable/Disable Forwarding Chat messages to Discord",
+   "DISCORDINTEGRATION.TokenControlsButtonTooltip" : "Enable/Disable forwarding chat messages to Discord",
 
    "DISCORDINTEGRATION.InvalidIdError" : "The Discord ID provided is invalid. It should be a 17 or 18 digit number.",
 
