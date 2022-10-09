@@ -31,7 +31,12 @@ const PING_BY_USER_NAME_INPUT = 'input[name="discord-integration.pingByUserName"
 const FORWARD_ALL_MESSAGES_INPUT = ' input[name="discord-integration.forwardAllMessages"]';
 const PREPEND_USER_NAME_INPUT = 'input[name="discord-integration.prependUserName"]';
 const SHOW_TOGGLE_BUTTON_INPUT = 'input[name="discord-integration.tokenControlsButton"]';
-
+const TOKEN_CONTROLS_SETTINGS_BUTTON = '#controls > ol.main-controls > li.scene-control[data-control="token"]';
+const TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE = '#controls > ol.main-controls > li.scene-control.active[data-control="token"]';
+const MEASURE_CONTROLS_SETTINGS_BUTTON = '#controls > ol.main-controls > li.scene-control[data-control="measure"]';
+const MEASURE_CONTROLS_SETTINGS_BUTTON_ACTIVE = '#controls > ol.main-controls > li.scene-control.active[data-control="measure"]';
+const ENABLE_DISABLE_FORWARDING_BUTTON = '#controls > ol.sub-controls > li[data-tool="discord-integration-toggle"]';
+const ENABLE_DISABLE_FORWARDING_BUTTON_ACTIVE = '#controls > ol.sub-controls > li.active[data-tool="discord-integration-toggle"]';
 const USER_CONFIGURATION = '#context-menu > ol > li:has-text("User Configuration")';
 const DISCORD_ID_INPUT = '#discord-id-setting > input[name="discord-id-config"]';
 const CHAT_TEXT_AREA = '#chat-message';
@@ -212,6 +217,64 @@ test.describe('discord-integration', () => {
         // case where the discord-id-config element was not found
     });
 
+    test.describe('should display toggle button in Token Controls', () => {
+        test.beforeEach(async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+        });
+        test('when Show Token Controls is enabled', async ({ page })  => {
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, true, page);
+            // Need to swap between scene control menus to get the changes in module settings to take effect.
+            await Promise.all([
+                page.locator(MEASURE_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(MEASURE_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await Promise.all([
+                page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await Promise.all([
+                page.locator(ENABLE_DISABLE_FORWARDING_BUTTON_ACTIVE).click(),
+                page.waitForSelector(ENABLE_DISABLE_FORWARDING_BUTTON),
+            ])
+            await Promise.all([
+                page.locator(ENABLE_DISABLE_FORWARDING_BUTTON).click(),
+                page.waitForSelector(ENABLE_DISABLE_FORWARDING_BUTTON_ACTIVE),
+            ])
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, false, page)
+        });    
+    });
+
+    test.describe('should NOT display toggle button in Token Controls', () => {
+        test.beforeEach(async ({ page }) => {
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+        });
+        test('when Show Token Controls is disabled', async ({ page })  => {
+            await Promise.all([
+                page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await expect(page.locator(ENABLE_DISABLE_FORWARDING_BUTTON)).toHaveCount(0);
+        });  
+        
+        test('when Show Token Controls is enabled but user does not have GM permissions', async ({ page })  => {
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, true, page);
+
+            await logOnAsUser(PLAYER_INDEX.PLAYER, page);
+            await Promise.all([
+                page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await expect(page.locator(ENABLE_DISABLE_FORWARDING_BUTTON)).toHaveCount(0);
+
+            await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, false, page);
+        });
+    });
+
     test.describe('should handle new chat messages', () => {
         test.describe('from GM', () => {
             test.beforeEach(async ({ page }) => {
@@ -254,7 +317,24 @@ test.describe('discord-integration', () => {
             test('when there is a @Discord tag in the message', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Discord test', false, page);
             });
-    
+
+            test('when the toggle button is enabled and is toggled on.', async ({ page }) => {
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, true, page);
+                await Promise.all([
+                    page.locator(MEASURE_CONTROLS_SETTINGS_BUTTON).click(),
+                    page.waitForSelector(MEASURE_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+                ])
+                await Promise.all([
+                    page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                    page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+                ])
+                expect(await page.isEnabled(ENABLE_DISABLE_FORWARDING_BUTTON));
+                await enterChatMessageAndAwaitSend('@Gamemaster test', true, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, false, page);
+            });
+
             test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
     
                 await openModuleSettings(page),
@@ -277,12 +357,15 @@ test.describe('discord-integration', () => {
                     });
                 });
             });
+
             test('when there is a tag in the message for a user', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
             });
+
             test('when there is are two tags in the message: one for a user', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
             });
+
             test('when there is are two tags in the message: both for users', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
             });
@@ -323,6 +406,27 @@ test.describe('discord-integration', () => {
                 await openModuleSettings(page);
                 await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page);
             });
+
+            test('when the toggle button is enabled and is toggled on.', async ({ page }) => {
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, true, page);
+                await logOnAsUser(PLAYER_INDEX.PLAYER, page);
+                // attach a listener to the sendDiscordMessage hook to signal test completion.
+                await page.evaluate(() => {
+                    Hooks.once("sendDiscordMessage", () => {
+                        console.log("Send Discord Message Hook successfully caught.")
+                    });
+                });
+                await Promise.all([
+                    page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                    page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+                ])
+                await enterChatMessageAndAwaitSend('@Gamemaster test', true, page);
+                await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, false, page);
+            });
          });
 
         /**
@@ -357,13 +461,39 @@ test.describe('discord-integration', () => {
             await logOnAsUser(PLAYER_INDEX.GAMEMASTER, page);
         });
 
-        test('when there are no tags in the message and Forward All Messages is not enabled.', async ({ page }) => {
+        test('when the toggle button is enabled and is toggled off.', async ({ page }) => {
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, true, page);
 
+            // Need to swap between scene control menus to get the changes in module settings to take effect.
+            await Promise.all([
+                page.locator(MEASURE_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(MEASURE_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await Promise.all([
+                page.locator(TOKEN_CONTROLS_SETTINGS_BUTTON).click(),
+                page.waitForSelector(TOKEN_CONTROLS_SETTINGS_BUTTON_ACTIVE),
+            ])
+            await Promise.all([
+                page.locator(ENABLE_DISABLE_FORWARDING_BUTTON_ACTIVE).click(),
+                page.waitForSelector(ENABLE_DISABLE_FORWARDING_BUTTON),
+            ])
+
+            await enterChatMessageAndAwaitLog('@Gamemaster test', page);
+
+            await Promise.all([
+                page.locator(ENABLE_DISABLE_FORWARDING_BUTTON).click(),
+                page.waitForSelector(ENABLE_DISABLE_FORWARDING_BUTTON_ACTIVE),
+            ])
+            await openModuleSettings(page);
+            await fillCheckboxThenClose(SHOW_TOGGLE_BUTTON_INPUT, false, page);
+        });
+
+        test('when there are no tags in the message and Forward All Messages is not enabled.', async ({ page }) => {
             await enterChatMessageAndAwaitLog('test', page);
         });
 
         test('when there is a tag in the message but not for a user', async ({ page }) => {
-
             await enterChatMessageAndAwaitLog('@NotAUser test', page);
         });
 
@@ -374,7 +504,7 @@ test.describe('discord-integration', () => {
             await openModuleSettings(page);
             await fillCheckboxThenClose(PING_BY_USER_NAME_INPUT, true, page);
         });
-
+  
         test('when there is a tag in the message for a character but the "Ping by Character Name" setting is disabled.', async ({ page }) => {
             await openModuleSettings(page);
             await fillCheckboxThenClose(PING_BY_CHARACTER_NAME_INPUT, false, page);

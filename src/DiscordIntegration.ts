@@ -97,6 +97,8 @@ Hooks.on('getSceneControlButtons', function (controls: SceneControl[]) {
                     name: 'discord-integration-toggle',
                     title: foundryGame.i18n.localize("DISCORDINTEGRATION.TokenControlsButtonTooltip"),
                     icon: 'fab fa-discord',
+                    toggle: true,
+                    active: game.settings.get('discord-integration', 'tokenControlsEnabled') as boolean,
                     onClick: toggleForwarding,
                 };
                 control.tools.push(tokenControlsButton);
@@ -185,7 +187,10 @@ Hooks.on("chatMessage", function (_chatLog: ChatLog, message: string, messageDat
     discordTags.push("@Discord");
 
     let shouldSendMessage = false;
-    if (!game.settings.get('discord-integration', 'tokenControlsEnabled')) {
+    // If the toggle button is turned off, we ignore the value of tokenControlsEnabled. 
+    // This is to avoid a situation where the last setting of the button was to "disabled" and the button is disabled,
+    // making it unclear why messages will not send.
+    if (game.settings.get('discord-integration', 'tokenControlsButton') && !game.settings.get('discord-integration', 'tokenControlsEnabled')) {
         shouldSendMessage = false;
     } else if (game.settings.get('discord-integration', 'forwardAllMessages')) {
         shouldSendMessage = true;
