@@ -25,5 +25,5 @@
   "rules": {
     "@typescript-eslint/no-shadow": ["error", { "builtinGlobals": true, "hoist": "all", "allow": ["event"] }]
   },
-  "ignorePatterns": ["gulpfile.js", "**/types/*.d.ts"],
+  "ignorePatterns": ["gulpfile.js", "**/types/*.d.ts"]
 }
