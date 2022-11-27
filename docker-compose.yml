@@ -1,9 +1,8 @@
----
 version: "3.8"
 
 services:
   foundry:
-    image: felddy/foundryvtt:9.269
+    image: felddy/foundryvtt:release
     hostname: my_foundry_host
     init: true
     volumes:

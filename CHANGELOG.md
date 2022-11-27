@@ -1,4 +1,10 @@
 # Discord Integration
+##  3.0.0
+- Implemented support for FoundryVTT Version 10, through build 290.
+- Added setting to allow players to be pinged based on their character name and/or their username.
+- Added setting to allow a user's player name to be prepended to their messages that are forwarded to Discord.
+- Added button in scene controls to toggle the mod on/off.
+- Added setting to forward ALL messages to Discord, regardless of tags.
 ##  2.1.6
 - Fixed module.json not linking to raw content
 ##  2.1.5
@@ -20,5 +26,5 @@
 ##  2.0.0
 - Added sendDiscordMessage hook
 ##  1.0.0
-- Discord Integraiton
+- Discord Integration
 
