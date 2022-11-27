@@ -1,15 +1,20 @@
 {
     "env": {
       "browser": true,
-      "es2022": true,
+      "es6": true,
       "node": true,
       "jquery": true
     },
+    "ignorePatterns": ["gulpfile.js", "**/types/*.d.ts"],
+    "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "requireConfigFile": false
+      "requireConfigFile": false,
+      "sourceType": "module",
+      "project": ["./tsconfig.json"]
     },
     "plugins": [
-      "jsdoc"
+      "jsdoc",
+      "@typescript-eslint"
     ],
     "rules": {
       "array-bracket-spacing": ["warn", "never"],
@@ -64,11 +69,11 @@
       "no-new-object": "warn",
       "no-new-symbol": "warn",
       "no-new-wrappers": "warn",
-      "no-nonoctal-decimal-escape": "warn",
+      //"no-nonoctal-decimal-escape": "warn",
       "no-obj-calls": "warn",
       "no-octal": "warn",
       "no-octal-escape": "warn",
-      "no-promise-executor-return": "warn",
+      //"no-promise-executor-return": "warn",
       "no-proto": "warn",
       "no-regex-spaces": "warn",
       "no-script-url": "warn",
@@ -82,11 +87,11 @@
       "no-unmodified-loop-condition": "warn",
       "no-unneeded-ternary": "warn",
       "no-unreachable": "warn",
-      "no-unreachable-loop": "warn",
+      //"no-unreachable-loop": "warn",
       "no-unsafe-negation": ["warn", {"enforceForOrderingRelations":  true}],
-      "no-unsafe-optional-chaining": ["warn", {"disallowArithmeticOperators":  true}],
+      //"no-unsafe-optional-chaining": ["warn", {"disallowArithmeticOperators":  true}],
       "no-unused-expressions": "warn",
-      "no-useless-backreference": "warn",
+      //"no-useless-backreference": "warn",
       "no-useless-call": "warn",
       "no-useless-catch": "warn",
       "no-useless-computed-key": ["warn", {"enforceForClassMembers": true}],
@@ -130,7 +135,7 @@
         "ignoreStrings": true,
         "ignoreTemplateLiterals": true
       }],
-      "no-extra-boolean-cast": ["warn", {"enforceForLogicalOperands": true}],
+      //"no-extra-boolean-cast": ["warn", {"enforceForLogicalOperands": true}],
       "no-extra-semi": "warn",
       "no-multi-spaces": ["warn", {"ignoreEOLComments": true}],
       "no-tabs": "warn",
@@ -153,6 +158,7 @@
         "asyncArrow": "always"
       }],
       "spaced-comment": "warn",
+      "@typescript-eslint/no-shadow": ["error", { "builtinGlobals": true, "hoist": "all", "allow": ["event"] }],
       "jsdoc/check-access": "warn",
       "jsdoc/check-alignment": "warn",
       "jsdoc/check-examples": "off",

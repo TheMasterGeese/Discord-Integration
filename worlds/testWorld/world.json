@@ -1,21 +1,13 @@
 {
-  "name": "testWorld",
   "title": "testWorld",
-  "description": "",
-  "authors": [],
-  "flags": {},
-  "version": "1.0.0",
-  "scripts": [],
-  "esmodules": [],
-  "styles": [],
-  "languages": [],
-  "packs": [],
+  "id": "testWorld",
   "system": "pf2e",
-  "dependencies": [],
-  "socket": false,
-  "protected": false,
-  "coreVersion": "9.269",
-  "resetKeys": false,
-  "safeMode": false,
-  "systemVersion": "3.12.2.10"
+  "description": "",
+  "coreVersion": "10.287",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  },
+  "systemVersion": "4.2.4",
+  "authors": []
 }

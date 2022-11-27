@@ -1,9 +1,19 @@
 {
-	"name": "discord-integration",
+	"id": "discord-integration",
 	"title": "MG Living World - Discord Integration Library",
 	"description": "Allows players to send messages to linked Discord Accounts, and provides API for other modules to also send Discord messages.",
 	"version": "2.1.6",
-	"author": "Khankar#2236",
+	"authors": [
+		{
+			"name": "MasterGeese",
+			"email": "themastergeese@gmail.com",
+			"discord": "Khankar#2236"
+		}
+	],
+	"compatibility": {
+		"minimum": 10,
+		"verified": "10.287"
+	},
 	"minimumCoreVersion": "9",
 	"compatibleCoreVersion": "9",
 	"esmodules": ["src/DiscordIntegration.js"],

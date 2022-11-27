@@ -287,14 +287,19 @@ test.describe('discord-integration', () => {
                         console.log("Send Discord Message Hook successfully caught.")
                     });
                 });
+                // Change the webhook
+                await openModuleSettings(page);
+                await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, false, false, page);
             });
 
-            test('when there is a tag in the message for a user', async ({ page }) => {
+            test('when there is a tag in the message for a user', async ({ page }) => {  
                 await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
             });
+
             test('when there is are two tags in the message: one for a user', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster @NotAUser test', false, page);
             });
+            
             test('when there is are two tags in the message: both for users', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster @Player test', false, page);
             });
@@ -337,13 +342,11 @@ test.describe('discord-integration', () => {
             });
 
             test('when there are no tags in the message, but Forward All Messages is Enabled', async ({ page }) => {
-    
-                await openModuleSettings(page),
-                    await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page)
+                await openModuleSettings(page);
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, true, page);
                 await enterChatMessageAndAwaitSend('test', true, page);
                 await openModuleSettings(page);
-                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page)
-    
+                await fillCheckboxThenClose(FORWARD_ALL_MESSAGES_INPUT, false, page);
             });
         });
 
@@ -804,11 +807,13 @@ test.describe('discord-integration', () => {
      * @param page The test's page fixture.
      */
     async function openModuleSettings(page: Page) {
-        // Click the settings icon in the sidemenu
-        await page.locator(SETTINGS_TAB).click();
+        await Promise.all([
+            // Click the settings icon in the sidemenu
+            page.locator(SETTINGS_TAB).click(),
 
-        // Go to the "Configure settings" menu
-        await page.locator(CONFIGURE_SETTINGS_BUTTON).click();
+            // Go to the "Configure settings" menu
+            page.locator(CONFIGURE_SETTINGS_BUTTON).click()
+        ]);
     }
 
     /**
@@ -832,7 +837,7 @@ test.describe('discord-integration', () => {
         // Click the "User Configuration" option to open the corresponding view.
         await Promise.all([
             page.locator(USER_CONFIGURATION).click(),
-            page.waitForSelector(`#user-sheet-${uid}`)
+            page.waitForSelector(`#UserConfigPF2e-User-${uid}`)
         ]);
     }
     /**
@@ -844,7 +849,7 @@ test.describe('discord-integration', () => {
      */
     async function fillDiscordWebhookThenClose(newWebhook: string, page: Page) {
         await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
-        await page.waitForSelector(SETTINGS_TAB, { state: 'detached' })
+        await page.waitForSelector(CLIENT_SETTINGS, { state: 'detached' })
     }
 
     /**
@@ -876,8 +881,11 @@ test.describe('discord-integration', () => {
         prependUserName ? await prependUserNameCheckbox.check() : await prependUserNameCheckbox.uncheck();
         const showToggleButtonCheckbox = page.locator(SHOW_TOGGLE_BUTTON_INPUT);
         showToggleButton ? await showToggleButtonCheckbox.check() : await showToggleButtonCheckbox.uncheck();
-        await fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page);
-        await page.waitForSelector(CLIENT_SETTINGS, { state: 'detached' })
+        await Promise.all([
+            fillInput(DISCORD_WEBHOOK_INPUT, newWebhook, page),
+            page.waitForSelector(CLIENT_SETTINGS, { state: 'detached' })
+        ]);
+
     }
 
     /**
@@ -902,7 +910,7 @@ test.describe('discord-integration', () => {
     async function fillInput(inputElement: string, newValue: string, page: Page) {
         await page.locator(inputElement).focus();
         await page.locator(inputElement).fill(newValue);
-        await page.locator(inputElement).press('Enter');
+        await page.locator(inputElement).press('Enter')
     }
 
     /**
@@ -914,8 +922,13 @@ test.describe('discord-integration', () => {
      */
     async function fillCheckboxThenClose(inputElement: string, checkOrUncheck: boolean, page: Page) {
         const checkbox = page.locator(inputElement);
-        checkOrUncheck ? await checkbox.check() : await checkbox.uncheck();
-        await checkbox.press('Enter');
+        await (checkOrUncheck ? checkbox.check() : checkbox.uncheck());
+        await Promise.all([
+            checkbox.press('Enter'),
+            page.locator(inputElement).waitFor({ state: "detached" })
+        ])
+        
+
     }
 
 
