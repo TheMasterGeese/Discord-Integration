@@ -3,7 +3,7 @@
   "id": "testWorld",
   "system": "pf2e",
   "description": "",
-  "coreVersion": "10.287",
+  "coreVersion": "10.290",
   "compatibility": {
     "minimum": "10",
     "verified": "10"

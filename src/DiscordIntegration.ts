@@ -14,7 +14,7 @@ const DISCORD_MIN_ID_LENGTH = 17;
 const TOKEN_CONTROLS_TOGGLE_BUTTON = '#controls > ol.sub-controls.app.control-tools.flexcol.active > li[data-tool="discord-integration-toggle"]';
 
 /**
- *
+ * Returns the game object.
  */
 function getGame(): Game {
   return game;
@@ -81,7 +81,10 @@ Hooks.once("init", function() {
     default: false,
     type: Boolean
   });
-  // Property manipualted by the token controls button to turn the mod's functionality on/off without disabling the entire mod
+  /**
+   * Property manipulated by the token controls button to turn the mod's functionality on/off without disabling the
+   * entire mod.
+   */
   foundryGame.settings.register("discord-integration", "tokenControlsEnabled", {
     scope: "world",
     config: false,
@@ -116,7 +119,10 @@ Hooks.on("renderUserConfig", async function(config: UserConfig, element: JQuery)
 
   // Find the user that you're opening config for
   // @ts-ignore Awaiting foundry-vtt-types update to use correct data schema
-  const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => { return user.id === (config.object)._id; })[0];
+  const foundryUser: StoredDocument<User> = gameUsers.filter((user: User) => {
+    // @ts-ignore
+    return user.id === (config.object)._id;
+  })[0];
 
   // Get their Discord ID if it exists
   let discordUserId: string = await foundryUser.getFlag("discord-integration", "discordID") as string;
@@ -138,8 +144,8 @@ Hooks.on("renderUserConfig", async function(config: UserConfig, element: JQuery)
   if (foundryUser.isGM) {
     /*
         // get their GM Notification status if it exists, defaulting to true.
-        const sendGMNotifications: boolean = await foundryUser.getFlag('discord-integration', 'sendGMNotifications') as boolean;
-
+        const sendGMNotifications: boolean = await foundryUser.getFlag('discord-integration', 'sendGMNotifications')
+          as boolean;
 
         const isChecked = sendGMNotifications ? "checked" : "";
         const gmNotificationCheckbox = `<input type="checkbox" name="gm-notification-config" ${isChecked}>`
@@ -160,7 +166,10 @@ Hooks.on("closeUserConfig", async function(config: UserConfig, element: JQuery) 
   const foundryUser: StoredDocument<User> = gameUsers.filter(user => { return user.id === (config.object)._id; })[0];
   const discordID: string = (element.find("input[name = 'discord-id-config']")[0] as HTMLInputElement).value;
 
-  if (discordID.length > DISCORD_MAX_ID_LENGTH || discordID.length < DISCORD_MIN_ID_LENGTH || isNaN(parseInt(discordID))) {
+  if (discordID.length > DISCORD_MAX_ID_LENGTH
+    || discordID.length < DISCORD_MIN_ID_LENGTH
+    || isNaN(parseInt(discordID)))
+  {
     ui.notifications.error(foundryGame.i18n.localize("DISCORDINTEGRATION.InvalidIdError"));
   } else {
     await foundryUser.update({ "flags.discord-integration.discordID": discordID });
@@ -223,7 +232,10 @@ Hooks.on("chatMessage", function(_chatLog: ChatLog, message: string, messageData
     }
     Hooks.callAll("sendDiscordMessage", message);
   } else {
-    // TODO discord-integration#35: This exists as a way to test when a message is not sent. Figure out a way to do it without modifying the code later.
+    /**
+     * TODO discord-integration#35: This exists as a way to test when a message is not sent.
+     * Figure out a way to do it without modifying the code later.
+     */
     console.log("Message not sent.");
   }
 
@@ -241,13 +253,14 @@ Hooks.on("sendDiscordMessage", function(message: string) {
 async function toggleForwarding() {
   const newSettingValue = !game.settings.get("discord-integration", "tokenControlsEnabled");
   await game.settings.set("discord-integration", "tokenControlsEnabled", newSettingValue);
-  newSettingValue ? $(TOKEN_CONTROLS_TOGGLE_BUTTON).addClass("active") : $(TOKEN_CONTROLS_TOGGLE_BUTTON).removeClass("active");
+  newSettingValue? $(TOKEN_CONTROLS_TOGGLE_BUTTON).addClass("active") : $(TOKEN_CONTROLS_TOGGLE_BUTTON).removeClass("active");
 }
 
 /**
  * Sends a message through the discord webhook as configured in settings.
  *
- * Messages that ping users in Discord need to have "@<gameUserName>" and the users must have their discord IDs configured.
+ * Messages that ping users in Discord need to have "@<gameUserName>"
+ * and the users must have their discord IDs configured.
  *
  * @param message The message to forward to Discord
  */
@@ -286,10 +299,15 @@ async function sendDiscordMessage(message: string) {
   // Search for @Discord in the message
   const shouldPingDiscord: boolean = (message.search("@Discord") !== -1);
 
-  // If it found any @<username> values, replace the values in the message with appropriate discord pings, then send discord message.
+  /**
+   * If it found any @<username> values, replace the values in the message with appropriate discord pings,
+   * then send discord message.
+   */
   if (usersToPing.length !== 0) {
     usersToPing.forEach((userName: string) => {
-      const currentUser: User | undefined = gameUsers.filter((user: User) => { return user.data.name === userName; })[0];
+      const currentUser: User | undefined = gameUsers.filter((user: User) => {
+        return user.data.name === userName;
+      })[0];
       if (currentUser) {
         const currentUserDiscordID: string = currentUser.getFlag("discord-integration", "discordID") as string;
         if (!currentUserDiscordID) {

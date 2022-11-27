@@ -292,7 +292,7 @@ test.describe('discord-integration', () => {
                 await fillModuleSettingsThenClose(EXPECTED_WEBHOOK, true, true, false, false, false, page);
             });
 
-            test('when there is a tag in the message for a user', async ({ page }) => {  
+            test('when there is a tag in the message for a user', async ({ page }) => {
                 await enterChatMessageAndAwaitSend('@Gamemaster test', false, page);
             });
 
