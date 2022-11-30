@@ -3,7 +3,5 @@ node_modules/
 /playwright-report/
 /playwright/.cache/
 .env
-dist/
-dist/**/*
 tests/TestEnvironment.ts
 
