@@ -81,6 +81,17 @@ Hooks.once("init", function() {
     default: false,
     type: Boolean
   });
+
+  // Add settings option to show/hide toggle button in tokencontrols
+  foundryGame.settings.register("discord-integration", "forwardDiceRolls", {
+    name: foundryGame.i18n.localize("DISCORDINTEGRATION.ForwardDiceRolls"),
+    hint: foundryGame.i18n.localize("DISCORDINTEGRATION.ForwardDiceRollsHint"),
+    scope: "world",
+    config: true,
+    default: true,
+    type: Boolean
+  });
+  
   /**
    * Property manipulated by the token controls button to turn the mod's functionality on/off without disabling the
    * entire mod.
@@ -204,7 +215,12 @@ Hooks.on("chatMessage", function(_chatLog: ChatLog, message: string, messageData
   // If the toggle button is turned off, we ignore the value of tokenControlsEnabled.
   // This is to avoid a situation where the last setting of the button was to "disabled" and the button is disabled,
   // making it unclear why messages will not send.
-  if (game.settings.get("discord-integration", "tokenControlsButton") && !game.settings.get("discord-integration", "tokenControlsEnabled")) {
+  if (game.settings.get("discord-integration", "forwardDiceRolls") && messageData.rolls) {
+    messageData.rolls.forEach((roll : Roll) => {
+      buildRollMessage(roll);
+    })
+    shouldSendMessage = true;
+  } else if (game.settings.get("discord-integration", "tokenControlsButton") && !game.settings.get("discord-integration", "tokenControlsEnabled")) {
     shouldSendMessage = false;
   } else if (game.settings.get("discord-integration", "forwardAllMessages")) {
     shouldSendMessage = true;
@@ -351,6 +367,35 @@ async function sendDiscordMessage(message: string) {
   }
 }
 
+function buildRollMessage(roll : Roll) : string{
+
+  // What do we want to include in the message?
+    // What action is being taken to warrant the roll?
+    // What are the modifiers and die size?
+    // What is the result?
+  // TODO: What system-specific data is there to consider, if any?
+  
+  switch (game.system.id) {
+    case ("pf2e"):
+      return buildPF2ERollMessage(roll);
+    case ("dnd5e"):
+      return buildDND5ERollMessage(roll);
+    default:
+      // TODO: Figure out what to default to, can there ever be a world without a system installed? What data is common to all systems?
+
+      return '';
+      break;
+  }
+}
+
+function buildPF2ERollMessage(roll : Roll) : string {
+  const rollData = roll.data;
+  return "PH";
+}
+
+function buildDND5ERollMessage(roll : Roll) : string {
+  return "PH";
+}
 class ChatMessageData {
     blind: boolean;
 
@@ -362,7 +407,7 @@ class ChatMessageData {
 
     flavor: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 
-    roll: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+    rolls: Roll[]
 
     sound: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 

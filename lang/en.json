@@ -11,6 +11,8 @@
    "DISCORDINTEGRATION.PrependUserNameHint" : "When checked, A player's FoundryVTT username is added to the start of each of their messages that is forwarded to Discord.",
    "DISCORDINTEGRATION.TokenControlsButton" : "Show Token Controls Button",
    "DISCORDINTEGRATION.TokenControlsButtonHint" : "Show button under token controls to enable/disable forwarding messages to Discord.",
+   "DISCORDINTEGRATION.ForwardDiceRolls" : "Forward Dice Rolls",
+   "DISCORDINTEGRATION.ForwardDiceRollsHint" : "Forward dice roll information to Discord.",
    
    "DISCORDINTEGRATION.UserDiscordIdLabel" : "Discord ID",
    "DISCORDINTEGRATION.GMNotificationsLabel" : "Receive GM Discord Notifications?",
