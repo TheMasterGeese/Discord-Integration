@@ -3,7 +3,7 @@
 
 import { ActorData } from "@league-of-foundry-developers/foundry-vtt-types/src/foundry/common/data/data.mjs/actorData";
 
-let gameUsers: StoredDocument<User>[];
+let gameUsers: any[];
 let foundryGame: Game;
 
 // Discord user-ids are either 17 or 18 digits.
@@ -212,14 +212,14 @@ Hooks.on("chatMessage", function(_chatLog: ChatLog, message: string, messageData
   discordTags.push("@Discord");
 
   let shouldSendMessage = false;
+
+  // If this is a roll message and we're forwarding those, we don't do that here, we have to wait for the roll to actually be made and for the chat
+  // message containing it to be ready.
+  if (game.settings.get("discord-integration", "forwardDiceRolls") && messageIncludesRollCommand(message.toLowerCase())) {
+    return;
   // If the toggle button is turned off, we ignore the value of tokenControlsEnabled.
   // This is to avoid a situation where the last setting of the button was to "disabled" and the button is disabled,
   // making it unclear why messages will not send.
-  if (game.settings.get("discord-integration", "forwardDiceRolls") && messageData.rolls) {
-    messageData.rolls.forEach((roll : Roll) => {
-      buildRollMessage(roll);
-    })
-    shouldSendMessage = true;
   } else if (game.settings.get("discord-integration", "tokenControlsButton") && !game.settings.get("discord-integration", "tokenControlsEnabled")) {
     shouldSendMessage = false;
   } else if (game.settings.get("discord-integration", "forwardAllMessages")) {
@@ -263,6 +263,18 @@ Hooks.on("sendDiscordMessage", function(message: string) {
   });
 });
 
+Hooks.on("preCreateChatMessage", function(message: any /* ChatMessage */, rollData : RollUserData, user: RollUserData, _userId: string) {
+  if (game.settings.get("discord-integration", "forwardDiceRolls") && message.whisper.length === 0) {
+    // If we're forwarding roll data, we need to grab it here and send it in a discord message.
+    rollData.rolls.forEach(roll => {
+      const rollMessage = buildRollMessage(roll, message.speaker);
+      sendDiscordMessage(rollMessage).catch(reason => {
+        console.error(reason);
+      });
+    })
+  }
+  
+})
 /**
  * Listener function for the button in the Token Settings menu to toggle forwarding of messages to Discord.
  */
@@ -367,57 +379,163 @@ async function sendDiscordMessage(message: string) {
   }
 }
 
-function buildRollMessage(roll : Roll) : string{
+function buildRollMessage(roll : Roll, speaker : Speaker) : string{
 
+  switch (game.system.id) {
+    /*
+    case ("pf2e"):
+      // TODO: Provide Support for PF2E system
+      return buildPF2ERollMessage(roll);
+    case ("dnd5e"):
+      // TODO: Provide Support for DND5e system
+      return buildDND5ERollMessage(roll);
+      */
+    default:
+      // TODO: Figure out what to default to, can there ever be a world without a system installed? What data is common to all systems?
+      return buildGenericRollMessage(roll, speaker);
+  }
+}
+
+/*
+function buildPF2ERollMessage(roll : Roll) : string {
   // What do we want to include in the message?
+  
+    Josuke rolls for Acrobatics: 
+
+    +4 Strength (Ability Modifier)
+    +4 Expert (Proficiency Bonus)
+    +1 Handwraps of Mighty Fists (Item Bonus)
+    +1 Bless (Status Bonus)
+    -1 Frightened (Status Penalty)
+    -1 Slippery Floor (Circumstance Penalty)
+    
+    Success
+    1d20 + 8 = 18
+   
+    (The DC of the check is not output as part of the message)
+  // Who is taking the action (the name of the player character)
+  const rollerActorName : string = roll.data.actor.name;
+
+  // What action(s) is being taken to trigger the roll?
+  const rollActions : any[] = roll.data.actions;
+  const rollActionNames : string[] = [];
+  rollActions.forEach((rollAction : any) => {
+    rollActionNames.push(rollAction.label);
+  })
+  const rollActionNameString : string = rollActionNames.join(" and ");
+
+  // What are the modifiers?
+  const modifiers : string[] = [];
+  const rollModifiers = roll.data.
+
+  // What is the roll formula?
+  const diceToRoll : RollTerm[] = roll.terms;
+  const rollFormulaArray : string[] = [];
+  diceToRoll.forEach((rollTerm : RollTerm) => {
+    if (rollTerm instanceof Die) {
+      rollFormulaArray.push(rollTerm.number + "d" + rollTerm.faces)
+    } else if (rollTerm instanceof OperatorTerm) {
+      // TODO
+    } else if (rollTerm instanceof NumericTerm) {
+      // TODO
+    }
+  });
+  roll
+
+    // What is the result?
+  // TODO: What system-specific data is there to consider, if any?
+  return "PH";
+}
+*/
+/*
+function buildDND5ERollMessage(roll : Roll) : string {
+  // What do we want to include in the message?
+
+  // Who is taking the action (the name of the player character)
     // What action is being taken to warrant the roll?
     // What are the modifiers and die size?
     // What is the result?
   // TODO: What system-specific data is there to consider, if any?
-  
-  switch (game.system.id) {
-    case ("pf2e"):
-      return buildPF2ERollMessage(roll);
-    case ("dnd5e"):
-      return buildDND5ERollMessage(roll);
-    default:
-      // TODO: Figure out what to default to, can there ever be a world without a system installed? What data is common to all systems?
-
-      return '';
-      break;
-  }
-}
-
-function buildPF2ERollMessage(roll : Roll) : string {
-  const rollData = roll.data;
   return "PH";
 }
+*/
 
-function buildDND5ERollMessage(roll : Roll) : string {
-  return "PH";
+function buildGenericRollMessage(roll : Roll, speaker : Speaker) : string {
+    // What do we want to include in the message?
+    // Who is taking the action (the name of the player character)
+    const rollerActorName : string = speaker.alias;
+
+    // What is the roll formula?
+    const rollFormula = roll.formula;
+    
+    const rollResults : string[] = [];
+    roll.terms.forEach((rollTerm : any) => {
+      const rollResult = rollTerm.results[0].result;
+      rollResults.push(rollResult);
+    });
+    return `${rollerActorName} rolls ${rollFormula}: ${rollResults.join('')}`;
 }
+
+function messageIncludesRollCommand(message : string) : boolean {
+  return (message.includes('/roll')
+  || message.includes('/r')
+  || message.includes('/publicroll')
+  || message.includes('/pr')
+  || message.includes('/gmroll')
+  || message.includes('/gmr')
+  || message.includes('/blindroll')
+  || message.includes('/broll')
+  || message.includes('/br')
+  || message.includes('/selfroll')
+  || message.includes('/sr')
+  )
+}
+
 class ChatMessageData {
-    blind: boolean;
+  blind: boolean;
 
-    content: string;
+  content: string;
 
-    emote: boolean;
+  emote: boolean;
 
-    flags: object;
+  flags: object;
 
-    flavor: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+  flavor: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 
-    rolls: Roll[]
+  rolls: Roll[]
 
-    sound: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+  sound: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
 
-    speaker: object;
+  speaker: object;
 
-    timestamp: number;
+  timestamp: number;
 
-    type: number;
+  type: number;
 
-    user: string;
+  user: string;
 
-    whisper: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+  whisper: any; // Not sure what these "any" fields are supposed to be filled with. Shouldn't be important for Discord Integration at the very least.
+}
+
+class RollData {
+  render: boolean;
+  renderSheet: boolean;
+  rollMode: string;
+  temporary: boolean;
+}
+
+class RollUserData {
+  content: number;
+  rolls : Roll[];
+  sound: string;
+  speaker: Speaker;
+  type: number;
+  user: string;
+}
+
+class Speaker {
+  actor: string;
+  alias: string;
+  scene: string;
+  token: string;
 }

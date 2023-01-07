@@ -6,7 +6,7 @@
   "description": "Allows players to send messages to linked Discord Accounts, and provides API for other modules to also send Discord messages.",
   "main": "src/DiscordIntegration.ts",
   "devDependencies": {
-    "@league-of-foundry-developers/foundry-vtt-types": "^9.255.3",
+    "@league-of-foundry-developers/foundry-vtt-types": "^9.280.0",
     "@playwright/test": "^1.24.0",
     "@types/fs-extra": "^9.0.13",
     "@types/gulp": "^4.0.9",
