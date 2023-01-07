@@ -263,11 +263,11 @@ Hooks.on("sendDiscordMessage", function(message: string) {
   });
 });
 
-Hooks.on("preCreateChatMessage", function(message: any /* ChatMessage */, rollData : RollUserData, user: RollUserData, _userId: string) {
-  if (game.settings.get("discord-integration", "forwardDiceRolls") && message.whisper.length === 0) {
+Hooks.on("preCreateChatMessage", function(message: any /* ChatMessage */, rollData : RollUserData, _user: RollUserData, _userId: string) {
+  if (game.settings.get("discord-integration", "forwardDiceRolls") && rollData && message.whisper.length === 0) {
     // If we're forwarding roll data, we need to grab it here and send it in a discord message.
     rollData.rolls.forEach(roll => {
-      const rollMessage = buildRollMessage(roll, message.speaker);
+      const rollMessage = buildRollMessage(roll, message.speaker, rollData.flavor);
       sendDiscordMessage(rollMessage).catch(reason => {
         console.error(reason);
       });
@@ -379,7 +379,7 @@ async function sendDiscordMessage(message: string) {
   }
 }
 
-function buildRollMessage(roll : Roll, speaker : Speaker) : string{
+function buildRollMessage(roll : Roll, speaker : Speaker, flavor : string) : string{
 
   switch (game.system.id) {
     /*
@@ -392,7 +392,7 @@ function buildRollMessage(roll : Roll, speaker : Speaker) : string{
       */
     default:
       // TODO: Figure out what to default to, can there ever be a world without a system installed? What data is common to all systems?
-      return buildGenericRollMessage(roll, speaker);
+      return buildGenericRollMessage(roll, speaker, flavor);
   }
 }
 
@@ -460,20 +460,25 @@ function buildDND5ERollMessage(roll : Roll) : string {
 }
 */
 
-function buildGenericRollMessage(roll : Roll, speaker : Speaker) : string {
+function buildGenericRollMessage(roll : Roll, speaker : Speaker, flavor : string) : string {
     // What do we want to include in the message?
     // Who is taking the action (the name of the player character)
     const rollerActorName : string = speaker.alias;
 
     // What is the roll formula?
-    const rollFormula = roll.formula;
+    let rollFormula = roll.formula;
+
+    // For complex formulae the entire formula is surrounded by braces that don't need to be forwarded.
+    if (rollFormula.startsWith('{') && rollFormula.endsWith('}')) {
+      rollFormula = rollFormula.substring(1, rollFormula.length - 2);
+    }
     
-    const rollResults : string[] = [];
-    roll.terms.forEach((rollTerm : any) => {
-      const rollResult = rollTerm.results[0].result;
-      rollResults.push(rollResult);
-    });
-    return `${rollerActorName} rolls ${rollFormula}: ${rollResults.join('')}`;
+
+    let rollMessage = `${rollerActorName} rolls ${rollFormula}: ${roll.total}`;
+    if (flavor) {
+      rollMessage += `\n\n${flavor.trim()}`
+    }
+    return rollMessage;
 }
 
 function messageIncludesRollCommand(message : string) : boolean {
@@ -526,6 +531,7 @@ class RollData {
 
 class RollUserData {
   content: number;
+  flavor : string;
   rolls : Roll[];
   sound: string;
   speaker: Speaker;
